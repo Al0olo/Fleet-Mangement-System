@@ -1,0 +1,201 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: ../api-gateway
+      dockerfile: Dockerfile
+    image: fleet-management/api-gateway:latest
+    container_name: fleet-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_LEVEL=debug
+      - ENABLE_GLOBAL_RATE_LIMIT=true
+      - INSTANCE_ID=api-gateway-1
+      - REDIS_CONNECT_RETRIES=10
+      - REDIS_CONNECT_RETRY_DELAY=2000
+      - REDIS_STORE_RETRIES=5
+      - VEHICLE_SERVICE_URL=http://vehicle-service:3000
+      - TRACKING_SERVICE_URL=http://tracking-service:3002
+    depends_on:
+      redis:
+        condition: service_healthy
+      vehicle-service:
+        condition: service_healthy
+      tracking-service:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/gateway/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  vehicle-service:
+    build:
+      context: ../vehicle-service
+      dockerfile: Dockerfile
+    image: fleet-management/vehicle-service:latest
+    container_name: fleet-vehicle-service
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - LOG_LEVEL=debug
+      - MONGODB_URI=mongodb://mongodb:27017/fleet-vehicles
+      - MONGODB_RETRY_CONNECTS=5
+      - MONGODB_RETRY_INTERVAL=5000
+      - KAFKA_BROKERS=kafka:9092
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  tracking-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fleet-management/tracking-service:latest
+    container_name: fleet-tracking-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - LOG_LEVEL=debug
+      - MONGODB_URI=mongodb://mongodb:27017/fleet-tracking
+      - MONGODB_RETRY_CONNECTS=5
+      - MONGODB_RETRY_INTERVAL=5000
+      - REDIS_URI=redis://redis:6379
+      - REDIS_RETRY_CONNECTS=5
+      - REDIS_RETRY_INTERVAL=5000
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_CLIENT_ID=tracking-service
+      - KAFKA_GROUP_ID=tracking-group
+      - KAFKA_TOPIC=vehicle-tracking
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: fleet-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  mongodb:
+    image: mongo:6-jammy
+    container_name: fleet-mongodb
+    ports:
+      - "27027:27017"
+    volumes:
+      - mongodb-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=fleet-management
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: fleet-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - fleet-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: fleet-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - fleet-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  fleet-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  mongodb-data: 

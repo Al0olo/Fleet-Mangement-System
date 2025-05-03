@@ -40,6 +40,24 @@ This workflow handles the building, testing, and containerization of the Vehicle
      - Runs tests
      - Builds a Docker image (but doesn't push it)
 
+### Tracking Service CI
+
+**File:** [tracking-service-ci.yml](./workflows/tracking-service-ci.yml)
+
+This workflow handles the building, testing, and containerization of the Tracking Service:
+
+1. **Trigger**: 
+   - Pull requests to `master` or `main` that modify files in `backend/tracking-service/`
+   - Pushes to `master` or `main` that modify files in `backend/tracking-service/`
+
+2. **Jobs**:
+   - `build`: Builds and tests the Tracking Service application
+     - Installs Node.js dependencies
+     - Runs the linter
+     - Builds TypeScript code
+     - Runs tests
+     - Builds a Docker image (but doesn't push it)
+
 ## Container Registry
 
 The Docker images are pushed to GitHub Container Registry (ghcr.io) with the following format:

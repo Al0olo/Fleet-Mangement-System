@@ -9,6 +9,7 @@ import setupMetricsRoutes from './metrics-routes';
 import setupDocsRoutes from './docs-routes';
 import swaggerSpec from '../swagger';
 import { setupVehicleServiceProxy } from './vehicle-proxy';
+import { setupTrackingServiceProxy } from './tracking-proxy';
 
 /**
  * Setup all application routes
@@ -45,6 +46,20 @@ export function setupRoutes(app: Application, logger: Logger, metricsRegistry: R
     })
     .catch((err: Error) => {
       logger.error(`Error setting up vehicle service routes: ${err}`);
+    });
+
+  // Register tracking service routes with detailed logging
+  logger.info('Explicitly setting up tracking service routes');
+  setupTrackingServiceProxy(app, logger)
+    .then((success: boolean) => {
+      if (success) {
+        logger.info('Tracking service routes registered successfully');
+      } else {
+        logger.error('Failed to register tracking service routes');
+      }
+    })
+    .catch((err: Error) => {
+      logger.error(`Error setting up tracking service routes: ${err}`);
     });
 
   // Set up all other proxy routes
