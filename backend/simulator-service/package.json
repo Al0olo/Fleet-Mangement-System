@@ -15,7 +15,7 @@
     "test:unit": "jest src/tests/unit",
     "test:integration": "jest src/tests/integration",
     "test:coverage": "jest --coverage src/tests/unit",
-    "test:ci": "jest --ci --coverage --reporters=default --reporters=jest-junit src/tests/unit",
+    "test:ci": "jest --ci --coverage --reporters=default --reporters=jest-junit -- src/tests/unit",
     "validate": "npm run lint:all && npm test"
   },
   "dependencies": {
