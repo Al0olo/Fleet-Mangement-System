@@ -19,6 +19,9 @@ FROM node:18-alpine AS production
 
 WORKDIR /usr/src/app
 
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
 # Copy package files
 COPY package*.json ./
 
@@ -29,15 +32,15 @@ RUN npm ci --only=production
 COPY --from=builder /usr/src/app/dist ./dist
 
 # Expose service port
-EXPOSE 3001
+EXPOSE 3000
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:3001/health || exit 1
+  CMD wget -qO- http://localhost:3000/health || exit 1
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=3000
 
 # Run as non-root user for better security
 USER node

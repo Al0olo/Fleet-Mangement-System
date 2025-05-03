@@ -88,16 +88,34 @@ export function createServer(customLogger?: winston.Logger) {
 
   // Connect to MongoDB
   const connectDB = async () => {
-    try {
-      const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/fleet-vehicles');
-      logger.info(`MongoDB Connected: ${conn.connection.host}`);
-    } catch (error) {
-      if (error instanceof Error) {
-        logger.error(`Error: ${error.message}`);
-      } else {
-        logger.error('Unknown error connecting to MongoDB');
+    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fleet-vehicles';
+    const RETRY_CONNECTS = parseInt(process.env.MONGODB_RETRY_CONNECTS || '5', 10);
+    const RETRY_INTERVAL = parseInt(process.env.MONGODB_RETRY_INTERVAL || '5000', 10);
+    
+    let retries = 0;
+    
+    while (retries < RETRY_CONNECTS) {
+      try {
+        logger.info(`Connecting to MongoDB at ${MONGODB_URI} (attempt ${retries + 1}/${RETRY_CONNECTS})`);
+        const conn = await mongoose.connect(MONGODB_URI);
+        logger.info(`MongoDB Connected: ${conn.connection.host}`);
+        return;
+      } catch (error) {
+        retries++;
+        if (error instanceof Error) {
+          logger.error(`MongoDB connection error: ${error.message}`);
+        } else {
+          logger.error('Unknown error connecting to MongoDB');
+        }
+        
+        if (retries >= RETRY_CONNECTS) {
+          logger.error(`Failed to connect to MongoDB after ${RETRY_CONNECTS} attempts. Exiting.`);
+          process.exit(1);
+        }
+        
+        logger.info(`Retrying in ${RETRY_INTERVAL}ms...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_INTERVAL));
       }
-      process.exit(1);
     }
   };
 
