@@ -1,4 +1,4 @@
-import { Kafka, Producer, KafkaMessage } from 'kafkajs';
+import { Kafka, Producer } from 'kafkajs';
 import { Logger } from 'winston';
 import { IVehicle } from '../models/vehicle';
 
