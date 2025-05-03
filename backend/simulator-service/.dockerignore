@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+coverage
+.git
+.github
+.vscode
+*.md
+.env
+logs
+*.log
+test-results
+.gitignore
+jest.config.js
+.eslintrc.js
+.eslintrc.test.js 

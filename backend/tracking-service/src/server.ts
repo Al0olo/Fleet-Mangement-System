@@ -18,7 +18,7 @@ dotenv.config();
 
 // Import routes and services
 import setupTrackingRoutes from './routes/tracking-routes';
-import { createLocationConsumer } from './services/kafka-factory';
+import { createLocationConsumer, createStatusConsumer, createEventConsumer } from './services/kafka-factory';
 
 // Initialize metrics
 const collectDefaultMetrics = promClient.collectDefaultMetrics;
@@ -268,8 +268,27 @@ export function createServer(customLogger?: winston.Logger) {
     next();
   });
 
+  // Initialize Kafka consumers
+  const initKafkaConsumers = () => {
+    logger.info('Initializing Kafka consumers');
+    
+    // Create location consumer
+    const locationConsumer = createLocationConsumer(logger, app.locals.redis);
+    app.locals.locationConsumer = locationConsumer;
+    
+    // Create status consumer
+    const statusConsumer = createStatusConsumer(logger, app.locals.redis);
+    app.locals.statusConsumer = statusConsumer;
+    
+    // Create event consumer
+    const eventConsumer = createEventConsumer(logger, app.locals.redis);
+    app.locals.eventConsumer = eventConsumer;
+    
+    logger.info('Kafka consumers initialized');
+  };
+
   // Set up routes - use the setup function with our logger
-  app.use('/api', setupTrackingRoutes(logger));
+  setupTrackingRoutes(app);
 
   // Handle 404
   app.use((_req: Request, res: Response) => {
@@ -289,37 +308,54 @@ export function createServer(customLogger?: winston.Logger) {
     });
   });
 
-  // Function to start the server
+  // Start the server
   const startServer = async (): Promise<Server> => {
-    // Connect to MongoDB first
-    await connectDB();
-    
-    // Connect to Redis
-    const redisClient = await connectRedis();
-    
-    const server = app.listen(PORT, '0.0.0.0', () => {
-      logger.info(`Tracking Service listening on port ${PORT}`);
-      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`API Documentation available at: http://localhost:${PORT}/api-docs`);
-      logger.info(`Worker: ${process.pid}`);
+    try {
+      // Connect to MongoDB
+      await connectDB();
       
-      // Initialize Kafka consumer after the server is started
-      if (redisClient && process.env.ENABLE_KAFKA_CONSUMER !== 'false') {
-        logger.info('Initializing Kafka consumer for vehicle location events');
-        try {
-          createLocationConsumer(logger, redisClient as any);
-        } catch (error) {
-          logger.error(`Failed to initialize Kafka consumer: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
+      // Connect to Redis
+      await connectRedis();
+      
+      // Initialize Kafka consumers
+      initKafkaConsumers();
+      
+      // Global error handler
+      app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+        logger.error(`Unhandled error: ${err.message}`);
+        logger.error(err.stack || 'No stack trace available');
+        
+        res.status(500).json({
+          success: false,
+          error: 'Internal Server Error',
+          message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+        });
+      });
+      
+      // Start listening
+      const server = app.listen(PORT, () => {
+        logger.info(`Tracking Service running on port ${PORT}`);
+      });
+      
+      // Set up graceful shutdown
+      process.on('SIGTERM', () => {
+        logger.info('SIGTERM received, shutting down gracefully');
+        server.close(() => {
+          logger.info('HTTP server closed');
+          process.exit(0);
+        });
+      });
+      
+      return server;
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error(`Server startup error: ${error.message}`);
+        logger.error(error.stack || 'No stack trace available');
       } else {
-        logger.info('Kafka consumer is disabled or Redis is not connected');
+        logger.error('Unknown server startup error');
       }
-    });
-    
-    // Increase default timeout
-    server.timeout = parseInt(process.env.SERVER_TIMEOUT || '60000', 10);
-    
-    return server;
+      process.exit(1);
+    }
   };
 
   return { app, startServer, logger };
