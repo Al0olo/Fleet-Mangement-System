@@ -307,15 +307,15 @@ graph TD
 graph TD
     API[REST API Layer]
     
-    API --> |POST| VR[/api/vehicles]
-    API --> |GET| VL[/api/vehicles]
-    API --> |GET| VD[/api/vehicles/:id]
-    API --> |POST| VT[/api/tracking/location]
-    API --> |GET| VTL[/api/tracking/vehicles/:id]
-    API --> |POST| VM[/api/maintenance/records]
-    API --> |GET| VA[/api/analytics/vehicles/:id]
-    API --> |POST| SIM[/api/simulator/config]
-    API --> |GET| SIMS[/api/simulator/status]
+    API -->|POST| VR["/api/vehicles"]
+    API -->|GET| VL["/api/vehicles"]
+    API -->|GET| VD["/api/vehicles/:id"]
+    API -->|POST| VT["/api/tracking/location"]
+    API -->|GET| VTL["/api/tracking/vehicles/:id"]
+    API -->|POST| VM["/api/maintenance/records"]
+    API -->|GET| VA["/api/analytics/vehicles/:id"]
+    API -->|POST| SIM["/api/simulator/config"]
+    API -->|GET| SIMS["/api/simulator/status"]
 ```
 
 ## Frontend Architecture
