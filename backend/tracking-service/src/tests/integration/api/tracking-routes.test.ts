@@ -159,7 +159,7 @@ describe('Tracking API Integration Tests', () => {
     app.locals.redis = mockRedisClient;
   });
 
-  describe('POST /api/tracking/location', () => {
+  describe('POST /api/location', () => {
     it('should record a new location', async () => {
       const newLocationData = {
         ...testLocationData,
@@ -171,7 +171,7 @@ describe('Tracking API Integration Tests', () => {
       };
       
       const response = await request(app)
-        .post('/api/tracking/location')
+        .post('/api/location')
         .send(newLocationData);
       
       expect(response.status).toBe(201);
@@ -189,7 +189,7 @@ describe('Tracking API Integration Tests', () => {
       };
       
       const response = await request(app)
-        .post('/api/tracking/location')
+        .post('/api/location')
         .send(invalidData)
         .expect('Content-Type', /json/)
         .expect(400);
@@ -199,10 +199,10 @@ describe('Tracking API Integration Tests', () => {
     });
   });
 
-  describe('GET /api/tracking/vehicles/:vehicleId/location', () => {
+  describe('GET /api/vehicles/:vehicleId/location', () => {
     it('should get the latest location for a vehicle', async () => {
       const response = await request(app)
-        .get(`/api/tracking/vehicles/${testVehicleId}/location`)
+        .get(`/api/vehicles/${testVehicleId}/location`)
         .expect('Content-Type', /json/)
         .expect(200);
       
@@ -225,7 +225,7 @@ describe('Tracking API Integration Tests', () => {
       }));
       
       const response = await request(app)
-        .get(`/api/tracking/vehicles/non-existent-id/location`)
+        .get(`/api/vehicles/non-existent-id/location`)
         .expect('Content-Type', /json/)
         .expect(404);
       
@@ -237,10 +237,10 @@ describe('Tracking API Integration Tests', () => {
     });
   });
 
-  describe('GET /api/tracking/vehicles/:vehicleId/history', () => {
+  describe('GET /api/vehicles/:vehicleId/history', () => {
     it('should get location history for a vehicle', async () => {
       const response = await request(app)
-        .get(`/api/tracking/vehicles/${testVehicleId}/history`)
+        .get(`/api/vehicles/${testVehicleId}/history`)
         .expect('Content-Type', /json/)
         .expect(200);
       
@@ -261,7 +261,7 @@ describe('Tracking API Integration Tests', () => {
       const endDate = new Date().toISOString(); // now
       
       const response = await request(app)
-        .get(`/api/tracking/vehicles/${testVehicleId}/history`)
+        .get(`/api/vehicles/${testVehicleId}/history`)
         .query({ startDate, endDate, limit: 10 })
         .expect('Content-Type', /json/)
         .expect(200);
@@ -271,10 +271,10 @@ describe('Tracking API Integration Tests', () => {
     });
   });
 
-  describe('GET /api/tracking/nearby', () => {
+  describe('GET /api/nearby', () => {
     it('should find vehicles near a location', async () => {
       const response = await request(app)
-        .get('/api/tracking/nearby')
+        .get('/api/nearby')
         .query({
           longitude: 55.378,
           latitude: 3.436,
@@ -289,7 +289,7 @@ describe('Tracking API Integration Tests', () => {
     
     it('should return 400 if longitude/latitude are missing', async () => {
       const response = await request(app)
-        .get('/api/tracking/nearby')
+        .get('/api/nearby')
         .query({ radius: '1000' }) // Missing longitude/latitude
         .expect('Content-Type', /json/)
         .expect(400);
