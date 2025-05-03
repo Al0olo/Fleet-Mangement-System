@@ -203,19 +203,19 @@ const setupTrackingRoutes = (logger: winston.Logger) => {
     new TrackingController(logger, req.app.locals.redis as RedisClientType<any, any, any>);
 
   // Record a new location
-  router.post('/tracking/location', (req, res) => 
+  router.post('/location', (req, res) => 
     trackingController(req).recordLocation(req, res));
   
   // Get the latest location for a vehicle
-  router.get('/tracking/vehicles/:vehicleId/location', (req, res) => 
+  router.get('/vehicles/:vehicleId/location', (req, res) => 
     trackingController(req).getLatestLocation(req, res));
   
   // Get location history for a vehicle
-  router.get('/tracking/vehicles/:vehicleId/history', (req, res) => 
+  router.get('/vehicles/:vehicleId/history', (req, res) => 
     trackingController(req).getLocationHistory(req, res));
   
   // Find vehicles near a specific location
-  router.get('/tracking/nearby', (req, res) => 
+  router.get('/nearby', (req, res) => 
     trackingController(req).findNearbyVehicles(req, res));
   
   return router;

@@ -21,6 +21,7 @@ services:
       - REDIS_CONNECT_RETRY_DELAY=2000
       - REDIS_STORE_RETRIES=5
       - VEHICLE_SERVICE_URL=http://vehicle-service:3000
+      - TRACKING_SERVICE_URL=http://tracking-service:3002
     depends_on:
       redis:
         condition: service_healthy
