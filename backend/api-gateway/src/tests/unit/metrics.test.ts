@@ -2,19 +2,27 @@ import { setupMetrics } from '../../config/metrics';
 import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 import promClient from 'prom-client';
 
+// Define interface for the mock histogram
+interface MockHistogram {
+  name: string;
+  labels: () => { observe: jest.Mock };
+}
+
 // Mock prom-client to avoid metric registration conflicts
 jest.mock('prom-client', () => {
-  const original = jest.requireActual('prom-client');
   return {
-    ...original,
+    collectDefaultMetrics: jest.fn(),
     Registry: class MockRegistry {
       metrics() { return 'metrics'; }
       registerMetric() { return true; }
     },
-    Histogram: class MockHistogram {
+    Histogram: class MockHistogram implements MockHistogram {
+      name: string;
+      
       constructor() {
         this.name = 'http_request_duration_seconds';
       }
+      
       labels() { 
         return {
           observe: jest.fn()

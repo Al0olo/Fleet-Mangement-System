@@ -42,7 +42,7 @@ jest.mock('../../routes/routes', () => ({
   setupRoutes: jest.fn()
 }));
 jest.mock('../../util/redis-client', () => ({
-  waitForRedis: jest.fn().mockResolvedValue(true)
+  waitForRedis: jest.fn().mockImplementation(() => Promise.resolve(true))
 }));
 
 // Save and restore environment variables

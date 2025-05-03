@@ -2,12 +2,9 @@ import { setupErrorHandlers } from '../../middleware/common/error-handler';
 import { Request, Response, NextFunction } from 'express';
 import { describe, jest, test, expect, beforeEach } from '@jest/globals';
 
-// Mock the middleware module
+// Mock the middleware module without using spread operator
 jest.mock('../../middleware/common/error-handler', () => {
-  const original = jest.requireActual('../../middleware/common/error-handler');
   return {
-    ...original,
-    // Provide an implementation that doesn't use the passed logger
     setupErrorHandlers: (mockLogger: any) => {
       const notFoundHandler = (_req: Request, res: Response) => {
         res.status(404).json({ status: 'error', message: 'Not found' });
