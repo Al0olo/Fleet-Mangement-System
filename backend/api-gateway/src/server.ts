@@ -153,6 +153,77 @@ export function createServer(customLogger?: winston.Logger) {
     res.end(await metricsRegistry.metrics());
   });
 
+  // Add debug endpoints to test routing
+  app.get('/debug', (req: Request, res: Response) => {
+    logger.info('Debug endpoint hit');
+    res.status(200).json({ 
+      status: 'OK', 
+      message: 'API Gateway debug endpoint',
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  app.get('/api/debug', (req: Request, res: Response) => {
+    logger.info('API debug endpoint hit');
+    res.status(200).json({ 
+      status: 'OK', 
+      message: 'API Gateway API debug endpoint',
+      path: req.path,
+      originalUrl: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
+  });
+  
+  // Add diagnostic endpoint
+  app.get('/api/diagnostics', async (req: Request, res: Response) => {
+    logger.info('Diagnostics endpoint hit');
+    
+    // Get service URLs from environment
+    const vehicleServiceUrl = process.env.VEHICLE_SERVICE_URL || 'http://localhost:3000';
+    
+    // Test connections
+    const results = {
+      timestamp: new Date().toISOString(),
+      gateway: {
+        status: 'ok',
+        version: process.env.npm_package_version || '1.0.0'
+      },
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        PORT: process.env.PORT
+      },
+      services: {} as any
+    };
+    
+    // Import the diagnostics tools
+    const { testServiceConnectivity } = await import('./debug-tools');
+    
+    // Test vehicle service
+    try {
+      const vehicleConnectivity = await testServiceConnectivity(
+        'vehicle-service',
+        vehicleServiceUrl,
+        '/health',
+        logger
+      );
+      
+      results.services['vehicle-service'] = {
+        url: vehicleServiceUrl,
+        reachable: vehicleConnectivity,
+        status: vehicleConnectivity ? 'ok' : 'unreachable'
+      };
+    } catch (error) {
+      results.services['vehicle-service'] = {
+        url: vehicleServiceUrl,
+        reachable: false,
+        status: 'error',
+        error: error
+      };
+    }
+    
+    res.status(200).json(results);
+  });
+
   // Set up Swagger UI
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
@@ -170,6 +241,33 @@ export function createServer(customLogger?: winston.Logger) {
 
   // Set up API Gateway's own routes
   app.use('/api/gateway', apiRoutes);
+
+  // Set up vehicle service route explicitly
+  const { setupVehicleServiceProxy } = require('./routes/vehicle-proxy');
+  
+  // Register vehicle service routes with detailed logging
+  logger.info('Explicitly setting up vehicle service routes');
+  setupVehicleServiceProxy(app, logger)
+    .then((success: boolean) => {
+      if (success) {
+        logger.info('Vehicle service routes registered successfully');
+      } else {
+        logger.error('Failed to register vehicle service routes');
+      }
+    })
+    .catch((err: Error) => {
+      logger.error(`Error setting up vehicle service routes: ${err}`);
+    });
+
+  // Add a simple test endpoint to verify routing
+  app.get('/api/test', (req: Request, res: Response) => {
+    logger.info('Test endpoint hit');
+    res.status(200).json({
+      status: 'ok',
+      message: 'API Gateway test endpoint',
+      timestamp: new Date().toISOString()
+    });
+  });
 
   // Set up all the proxy routes
   setupProxyRoutes(app, logger);
@@ -199,6 +297,10 @@ export function createServer(customLogger?: winston.Logger) {
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`API Documentation available at: http://localhost:${PORT}/api-docs`);
       logger.info(`Worker: ${process.pid}`);
+      
+      // Log all environment variables for debugging
+      logger.info(`Vehicle Service URL: ${process.env.VEHICLE_SERVICE_URL || 'Not set'}`);
+      logger.info(`Available Routes: GET /api/vehicles/health-check, GET /api/vehicle-health, GET /api/diagnostics`);
       
       // After startup, ensure Redis is available for optimal operation
       // Do this async to not block the server startup

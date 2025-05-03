@@ -21,10 +21,24 @@ This workflow handles the building, testing, and containerization of the API Gat
      - Builds TypeScript code
      - Runs tests
      - Builds a Docker image (but doesn't push it)
-   
-   - `push-image`: Builds and pushes the Docker image to GitHub Container Registry
-     - Only runs on direct pushes to `master` or `main` (not on PRs)
-     - Pushes the image with both `latest` and commit SHA tags
+
+### Vehicle Service CI
+
+**File:** [vehicle-service-ci.yml](./workflows/vehicle-service-ci.yml)
+
+This workflow handles the building, testing, and containerization of the Vehicle Service:
+
+1. **Trigger**: 
+   - Pull requests to `master` or `main` that modify files in `backend/vehicle-service/`
+   - Pushes to `master` or `main` that modify files in `backend/vehicle-service/`
+
+2. **Jobs**:
+   - `build`: Builds and tests the Vehicle Service application
+     - Installs Node.js dependencies
+     - Runs the linter
+     - Builds TypeScript code
+     - Runs tests
+     - Builds a Docker image (but doesn't push it)
 
 ## Container Registry
 
