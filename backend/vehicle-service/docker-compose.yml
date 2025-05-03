@@ -49,6 +49,8 @@ services:
       - PORT=3000
       - LOG_LEVEL=debug
       - MONGODB_URI=mongodb://mongodb:27017/fleet-vehicles
+      - MONGODB_RETRY_CONNECTS=5
+      - MONGODB_RETRY_INTERVAL=5000
       - KAFKA_BROKERS=kafka:9092
     depends_on:
       mongodb:
@@ -63,7 +65,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 30s
 
   redis:
     image: redis:7-alpine

@@ -9,6 +9,9 @@ import responseTime from 'response-time';
  * @param durationMetric Optional Prometheus duration metric
  */
 export function setupRequestLogging(logger: Logger, durationMetric?: any) {
+  // Get the worker ID for the current process
+  const workerId = process.env.WORKER_ID || '0';
+
   // Morgan HTTP logger that sends to winston
   const httpLogger = morgan('combined', {
     stream: {
@@ -27,13 +30,13 @@ export function setupRequestLogging(logger: Logger, durationMetric?: any) {
     // Record metric if provided
     if (durationMetric) {
       durationMetric
-        .labels(method, route, statusCode)
+        .labels(method, route, statusCode, workerId)
         .observe(time / 1000); // Convert from ms to seconds
     }
       
     // Log slow requests
     if (time > 1000) { // Longer than 1 second
-      logger.warn(`Slow request: ${method} ${route} - ${time.toFixed(2)}ms`);
+      logger.warn(`Slow request: ${method} ${route} - ${time.toFixed(2)}ms (worker: ${workerId})`);
     }
   });
 
@@ -41,6 +44,8 @@ export function setupRequestLogging(logger: Logger, durationMetric?: any) {
   const requestIdMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const requestId = req.headers['x-request-id'] || Math.random().toString(36).substring(2, 15);
     res.setHeader('X-Request-ID', requestId);
+    // Add worker ID to response headers for debugging
+    res.setHeader('X-Worker-ID', workerId);
     next();
   };
 
