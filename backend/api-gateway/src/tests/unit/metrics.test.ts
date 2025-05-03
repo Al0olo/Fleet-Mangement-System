@@ -19,8 +19,9 @@ jest.mock('prom-client', () => {
     Histogram: class MockHistogram implements MockHistogram {
       name: string;
       
-      constructor() {
-        this.name = 'http_request_duration_seconds';
+      constructor(config: any) {
+        // Use the name from config instead of hardcoding
+        this.name = config.name || 'http_request_duration_seconds';
       }
       
       labels() { 
@@ -38,6 +39,9 @@ describe('Metrics Configuration', () => {
     
     // Reset environment for clean tests
     delete process.env.WORKER_ID;
+    
+    // Reset modules for each test
+    jest.resetModules();
   });
 
   test('creates a metrics registry', () => {
@@ -69,17 +73,16 @@ describe('Metrics Configuration', () => {
     process.env.WORKER_ID = '1';
     
     // Reset singleton for this specific test
-    // @ts-ignore - Accessing private module variable for testing
-    const originalModule = require('../../config/metrics');
-    originalModule.metricsInstance = null;
-    
-    const { httpRequestDurationMicroseconds } = setupMetrics();
-    
-    expect((httpRequestDurationMicroseconds as any).name).toBe('http_request_duration_seconds_worker_1');
-    
-    // Test with worker-specific labels
-    expect(() => {
-      httpRequestDurationMicroseconds.labels('GET', '/test', '200', '1').observe(0.1);
-    }).not.toThrow();
+    jest.isolateModules(() => {
+      const { setupMetrics: setupMetricsIsolated } = require('../../config/metrics');
+      const { httpRequestDurationMicroseconds } = setupMetricsIsolated();
+      
+      expect((httpRequestDurationMicroseconds as any).name).toBe('http_request_duration_seconds_worker_1');
+      
+      // Test with worker-specific labels
+      expect(() => {
+        httpRequestDurationMicroseconds.labels('GET', '/test', '200', '1').observe(0.1);
+      }).not.toThrow();
+    });
   });
 }); 
