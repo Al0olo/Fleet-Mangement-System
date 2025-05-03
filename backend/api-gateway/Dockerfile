@@ -16,6 +16,12 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Test stage
+FROM build AS test
+
+# Run linting and tests with coverage
+RUN npm run lint && npm run test:coverage
+
 # Production stage
 FROM node:18-alpine AS production
 
