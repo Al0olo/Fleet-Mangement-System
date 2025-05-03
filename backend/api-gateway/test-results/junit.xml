@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="12" failures="0" errors="0" time="0.986">
+  <testsuite name="API Routes" errors="0" failures="0" skipped="0" timestamp="2025-05-03T07:55:22" time="0.344" tests="4">
+    <testcase classname="API Routes Health Check Endpoints GET /health returns 200" name="API Routes Health Check Endpoints GET /health returns 200" time="0.019">
+    </testcase>
+    <testcase classname="API Routes Health Check Endpoints GET /debug returns 200" name="API Routes Health Check Endpoints GET /debug returns 200" time="0.002">
+    </testcase>
+    <testcase classname="API Routes Health Check Endpoints GET /api/test returns 200" name="API Routes Health Check Endpoints GET /api/test returns 200" time="0.003">
+    </testcase>
+    <testcase classname="API Routes Error Handling GET /non-existent-path returns 404" name="API Routes Error Handling GET /non-existent-path returns 404" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="Server" errors="0" failures="0" skipped="0" timestamp="2025-05-03T07:55:22" time="0.175" tests="2">
+    <testcase classname="Server createServer initializes app and returns expected interface" name="Server createServer initializes app and returns expected interface" time="0.003">
+    </testcase>
+    <testcase classname="Server createServer can use provided logger" name="Server createServer can use provided logger" time="0.002">
+    </testcase>
+  </testsuite>
+  <testsuite name="Logger Configuration" errors="0" failures="0" skipped="0" timestamp="2025-05-03T07:55:22" time="0.103" tests="2">
+    <testcase classname="Logger Configuration creates a logger with default service name" name="Logger Configuration creates a logger with default service name" time="0.007">
+    </testcase>
+    <testcase classname="Logger Configuration creates a logger with custom service name" name="Logger Configuration creates a logger with custom service name" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="Error Handler Middleware" errors="0" failures="0" skipped="0" timestamp="2025-05-03T07:55:23" time="0.078" tests="2">
+    <testcase classname="Error Handler Middleware notFoundHandler returns 404 status" name="Error Handler Middleware notFoundHandler returns 404 status" time="0.002">
+    </testcase>
+    <testcase classname="Error Handler Middleware errorHandler returns 500 status and logs error" name="Error Handler Middleware errorHandler returns 500 status and logs error" time="0.006">
+    </testcase>
+  </testsuite>
+  <testsuite name="Metrics Configuration" errors="0" failures="0" skipped="0" timestamp="2025-05-03T07:55:23" time="0.073" tests="2">
+    <testcase classname="Metrics Configuration creates a metrics registry" name="Metrics Configuration creates a metrics registry" time="0.001">
+    </testcase>
+    <testcase classname="Metrics Configuration creates a HTTP duration histogram" name="Metrics Configuration creates a HTTP duration histogram" time="0">
+    </testcase>
+  </testsuite>
+</testsuites>

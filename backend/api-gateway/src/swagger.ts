@@ -1,5 +1,11 @@
 import swaggerJSDoc from 'swagger-jsdoc';
-import { version } from '../package.json';
+import fs from 'fs';
+import path from 'path';
+
+// Read package.json to get version
+const packageJsonPath = path.resolve(__dirname, '../package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+const version = packageJson.version || '1.0.0';
 
 // Swagger definition
 const swaggerDefinition = {

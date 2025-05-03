@@ -82,7 +82,7 @@ if (cluster.isPrimary) {
   const workerId = process.env.WORKER_ID || '0';
   
   // Create and start the server
-  const { app, startServer } = createServer(logger);
+  const { startServer } = createServer(logger);
   
   // Start the server
   const server = startServer();

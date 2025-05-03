@@ -1,16 +1,13 @@
-import { Application, Router, Request, Response, NextFunction } from 'express';
+import { Application, Request, Response, NextFunction } from 'express';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import { Logger } from 'winston';
-import { createServiceLimiter } from '../middleware/rate-limiter';
 
 /**
  * Set up dedicated proxy for the Vehicle Service
  */
 export async function setupVehicleServiceProxy(app: Application, logger: Logger) {
   try {
-    const serviceName = 'vehicle-service';
     const serviceUrl = process.env.VEHICLE_SERVICE_URL || 'http://localhost:3000';
-    const rateLimit = 100;
     
     logger.info(`Setting up vehicle service proxy to ${serviceUrl}`);
     

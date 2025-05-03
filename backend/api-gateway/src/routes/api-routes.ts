@@ -1,7 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { getStandardLimiter, getStrictLimiter } from '../middleware/rate-limiter';
 import { Logger } from 'winston';
-import { setupHealthChecks } from '../middleware/resilience/resilient-proxy';
 
 const router = express.Router();
 
@@ -84,12 +83,6 @@ router.get('/version', (req, res, next) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
-
-interface ServiceInfo {
-  name: string;
-  status: 'active' | 'inactive' | 'error';
-  url: string | undefined;
-}
 
 /**
  * @swagger
