@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -29,7 +29,7 @@ export function setupSecurityMiddleware(logger: Logger) {
   };
 
   // Setup rate limiting middleware
-  const setupRateLimiting = async (req: Request, res: Response, next: Function) => {
+  const setupRateLimiting = async (req: Request, res: Response, next: NextFunction) => {
     const limiter = await getIpLimiter(logger);
     limiter(req, res, next);
   };

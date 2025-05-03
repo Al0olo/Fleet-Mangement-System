@@ -1,6 +1,4 @@
-import { Application } from 'express';
 import { createProxyMiddleware, Options as ProxyOptions } from 'http-proxy-middleware';
-import pRetry from 'p-retry';
 import axios from 'axios';
 import { Logger } from 'winston';
 import createCircuitBreaker from './circuit-breaker';
@@ -23,7 +21,6 @@ export function createResilientProxy({
   pathRewrite,
   serviceName,
   timeout = 5000, // Default 5 second timeout
-  retries = 3, // Default 3 retries
   logger,
   circuitBreakerOptions = {},
   ...proxyOpts

@@ -8,6 +8,7 @@ import setupHealthRoutes from './health-routes';
 import setupMetricsRoutes from './metrics-routes';
 import setupDocsRoutes from './docs-routes';
 import swaggerSpec from '../swagger';
+import { setupVehicleServiceProxy } from './vehicle-proxy';
 
 /**
  * Setup all application routes
@@ -31,7 +32,6 @@ export function setupRoutes(app: Application, logger: Logger, metricsRegistry: R
   app.use('/api/gateway', apiRoutes);
 
   // Set up vehicle service route explicitly
-  const { setupVehicleServiceProxy } = require('./vehicle-proxy');
   
   // Register vehicle service routes with detailed logging
   logger.info('Explicitly setting up vehicle service routes');

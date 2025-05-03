@@ -37,7 +37,7 @@ export function createCircuitBreaker(
   const breaker = new CircuitBreaker(
     // The function to protect
     async (req: Request, res: Response, next: NextFunction) => {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         // We'll just use this as a pass-through to the next middleware
         // The actual request will be handled by the proxy middleware
         next();
@@ -60,7 +60,7 @@ export function createCircuitBreaker(
     logger.info(`Circuit breaker for ${serviceName} is now HALF OPEN (testing if service is healthy)`);
   });
 
-  breaker.on('fallback', (result) => {
+  breaker.on('fallback', () => {
     logger.warn(`Circuit breaker for ${serviceName} fallback executed`);
   });
 

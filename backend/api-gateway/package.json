@@ -8,7 +8,7 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "start:cluster": "node dist/cluster.js",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint \"src/**/*.ts\" --ignore-pattern \"src/tests/**\"",
     "test": "jest",
     "test:unit": "jest src/tests/unit",
     "test:integration": "jest src/tests/integration",

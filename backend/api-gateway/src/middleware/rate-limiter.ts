@@ -1,8 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
-import { Options } from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import IORedis from 'ioredis';
 import { Logger } from 'winston';
 import RedisClient from "../util/redis-client";
 
@@ -13,7 +11,6 @@ const WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10); //
 // Create singleton limiters - these will be initialized when first needed
 let standardLimiter: ReturnType<typeof rateLimit>;
 let strictLimiter: ReturnType<typeof rateLimit>;
-let apiKeyLimiter: ReturnType<typeof rateLimit>;
 let ipLimiter: any = null;
 
 /**
