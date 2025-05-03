@@ -1,0 +1,36 @@
+# Node modules and dependencies
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Build outputs
+dist
+build
+coverage
+test-results
+
+# Environment and secrets
+.env.local
+.env.development
+.env.test
+
+# Git and version control
+.git
+.gitignore
+.github
+
+# Development files
+*.md
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+.editorconfig
+.eslintrc*
+.prettierrc*
+.vscode
+*.log
+*.swp
+*.tgz
+.DS_Store
+thumbs.db 

@@ -58,6 +58,25 @@ This workflow handles the building, testing, and containerization of the Trackin
      - Runs tests
      - Builds a Docker image (but doesn't push it)
 
+### Maintenance Service CI
+
+**File:** [maintenance-service-ci.yml](./workflows/maintenance-service-ci.yml)
+
+This workflow handles the building, testing, and containerization of the Maintenance Service:
+
+1. **Trigger**: 
+   - Pull requests to `master` or `main` that modify files in `backend/maintenance-service/`
+   - Pushes to `master` or `main` that modify files in `backend/maintenance-service/`
+
+2. **Jobs**:
+   - `build`: Builds and tests the Maintenance Service application
+     - Installs Node.js dependencies
+     - Runs the linter (both source and test files)
+     - Builds TypeScript code
+     - Runs tests with coverage
+     - Uploads test results and coverage reports
+     - Builds a Docker image (but doesn't push it)
+
 ## Container Registry
 
 The Docker images are pushed to GitHub Container Registry (ghcr.io) with the following format:

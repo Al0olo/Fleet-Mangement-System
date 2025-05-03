@@ -10,6 +10,7 @@ import setupDocsRoutes from './docs-routes';
 import swaggerSpec from '../swagger';
 import { setupVehicleServiceProxy } from './vehicle-proxy';
 import { setupTrackingServiceProxy } from './tracking-proxy';
+import { setupMaintenanceServiceProxy } from './maintenance-proxy';
 
 /**
  * Setup all application routes
@@ -60,6 +61,20 @@ export function setupRoutes(app: Application, logger: Logger, metricsRegistry: R
     })
     .catch((err: Error) => {
       logger.error(`Error setting up tracking service routes: ${err}`);
+    });
+    
+  // Register maintenance service routes with detailed logging
+  logger.info('Explicitly setting up maintenance service routes');
+  setupMaintenanceServiceProxy(app, logger)
+    .then((success: boolean) => {
+      if (success) {
+        logger.info('Maintenance service routes registered successfully');
+      } else {
+        logger.error('Failed to register maintenance service routes');
+      }
+    })
+    .catch((err: Error) => {
+      logger.error(`Error setting up maintenance service routes: ${err}`);
     });
 
   // Set up all other proxy routes
