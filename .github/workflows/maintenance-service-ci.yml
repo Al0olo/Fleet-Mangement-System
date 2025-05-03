@@ -1,0 +1,71 @@
+name: Maintenance Service CI
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'backend/maintenance-service/**'
+      - '.github/workflows/maintenance-service-ci.yml'
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'backend/maintenance-service/**'
+      - '.github/workflows/maintenance-service-ci.yml'
+
+jobs:
+  build:
+    name: Build and Test Maintenance Service
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'backend/maintenance-service/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: backend/maintenance-service
+        run: npm ci
+        
+      - name: Run linter
+        working-directory: backend/maintenance-service
+        run: npm run lint:all
+        
+      - name: Build TypeScript
+        working-directory: backend/maintenance-service
+        run: npm run build
+        
+      - name: Run tests with coverage
+        working-directory: backend/maintenance-service
+        run: npm run test:ci
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maintenance-service-test-results
+          path: backend/maintenance-service/test-results/junit.xml
+          
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: maintenance-service-coverage-report
+          path: backend/maintenance-service/coverage
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image with tests
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend/maintenance-service
+          push: false
+          load: true
+          tags: fleet-management/maintenance-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max 

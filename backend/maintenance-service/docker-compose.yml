@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  maintenance-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fleet-management/maintenance-service:latest
+    container_name: fleet-maintenance-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - LOG_LEVEL=debug
+      - MONGODB_URI=mongodb://mongodb:27017/fleet-maintenance
+      - MONGODB_RETRY_CONNECTS=5
+      - MONGODB_RETRY_INTERVAL=5000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  mongodb:
+    image: mongo:6-jammy
+    container_name: fleet-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=fleet-management
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ../api-gateway
+      dockerfile: Dockerfile
+    image: fleet-management/api-gateway:latest
+    container_name: fleet-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - LOG_LEVEL=debug
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ENABLE_GLOBAL_RATE_LIMIT=true
+      - INSTANCE_ID=api-gateway-1
+      - REDIS_CONNECT_RETRIES=10
+      - REDIS_CONNECT_RETRY_DELAY=2000
+      - REDIS_STORE_RETRIES=5
+      - MAINTENANCE_SERVICE_URL=http://maintenance-service:3002
+    depends_on:
+      maintenance-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - fleet-network
+
+  # Redis for API Gateway caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: fleet-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+networks:
+  fleet-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+  redis-data: 
