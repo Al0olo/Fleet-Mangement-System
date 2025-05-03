@@ -84,14 +84,66 @@ import { Request, Response, NextFunction } from 'express';
 
 /**
  * @swagger
- * /api/simulator/start:
- *   post:
- *     summary: Start a fleet simulation
- *     description: Begin a simulation of fleet operations
+ * tags:
+ *   name: Simulator
+ *   description: Fleet simulation endpoints
+ */
+
+/**
+ * @swagger
+ * /api/simulator/simulations:
+ *   get:
+ *     summary: Get all simulations
+ *     description: Retrieve a list of all simulations
  *     tags: [Simulator]
  *     responses:
  *       200:
+ *         description: List of simulations
+ *   post:
+ *     summary: Create a simulation
+ *     description: Create a new simulation
+ *     tags: [Simulator]
+ *     responses:
+ *       201:
+ *         description: Simulation created
+ */
+
+/**
+ * @swagger
+ * /api/simulator/simulations/{id}/start:
+ *   post:
+ *     summary: Start a simulation
+ *     description: Start a specific simulation
+ *     tags: [Simulator]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Simulation ID
+ *     responses:
+ *       200:
  *         description: Simulation started
+ */
+
+/**
+ * @swagger
+ * /api/simulator/simulations/{id}/stop:
+ *   post:
+ *     summary: Stop a simulation
+ *     description: Stop a specific simulation
+ *     tags: [Simulator]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Simulation ID
+ *     responses:
+ *       200:
+ *         description: Simulation stopped
  */
 
 // Setup proxy routes

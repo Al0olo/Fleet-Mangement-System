@@ -1,25 +1,20 @@
 import { Consumer, Kafka, EachMessagePayload } from 'kafkajs';
-import { LocationService } from './location-service';
 import winston from 'winston';
-import { RedisClientType } from 'redis';
-import { ILocationData } from '../models/location-data';
 
 /**
- * Service for consuming location events from Kafka
+ * Abstract base class for Kafka consumers
  */
-export class KafkaConsumerService {
-  private kafka: Kafka;
-  private consumer: Consumer;
-  private locationService: LocationService;
-  private logger: winston.Logger;
-  private isRunning = false;
+export abstract class KafkaConsumerService {
+  protected kafka: Kafka;
+  protected consumer: Consumer;
+  protected logger: winston.Logger;
+  protected isRunning = false;
 
   constructor(
     brokers: string[],
     clientId: string,
     groupId: string,
-    logger: winston.Logger,
-    redis: RedisClientType<any, any, any>
+    logger: winston.Logger
   ) {
     this.kafka = new Kafka({
       clientId,
@@ -28,7 +23,6 @@ export class KafkaConsumerService {
 
     this.consumer = this.kafka.consumer({ groupId });
     this.logger = logger;
-    this.locationService = new LocationService(logger, redis);
   }
 
   /**
@@ -80,45 +74,9 @@ export class KafkaConsumerService {
   }
 
   /**
-   * Process a message from Kafka
+   * Process a message from Kafka - to be implemented by derived classes
    * @param payload The Kafka message payload
-   * @private
+   * @protected
    */
-  private async processMessage(payload: EachMessagePayload): Promise<void> {
-    const { topic, partition, message } = payload;
-    
-    if (!message.value) {
-      this.logger.warn(`Received empty message from ${topic}[${partition}]`);
-      return;
-    }
-
-    try {
-      const messageValue = message.value.toString();
-      this.logger.debug(`Received message from ${topic}[${partition}]: ${messageValue}`);
-      
-      const locationData = JSON.parse(messageValue) as Partial<ILocationData>;
-      
-      // Validate basic message structure
-      if (!locationData.vehicleId || !locationData.location || !locationData.location.coordinates) {
-        this.logger.warn(`Invalid location data format: ${messageValue}`);
-        return;
-      }
-
-      // Process the location update
-      const savedLocation = await this.locationService.recordLocation(locationData);
-      
-      this.logger.info(`Processed location update for vehicle ${savedLocation.vehicleId}`);
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        this.logger.error(`Invalid JSON in message: ${error.message}`);
-      } else if (error instanceof Error) {
-        this.logger.error(`Error processing message: ${error.message}`);
-      } else {
-        this.logger.error('Unknown error processing message');
-      }
-      
-      // We don't rethrow the error to prevent the consumer from crashing
-      // Instead, we'll continue processing the next message
-    }
-  }
+  protected abstract processMessage(payload: EachMessagePayload): Promise<void>;
 } 

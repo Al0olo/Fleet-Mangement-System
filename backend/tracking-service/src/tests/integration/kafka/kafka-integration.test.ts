@@ -1,4 +1,4 @@
-import { KafkaConsumerService } from '../../../services/kafka-consumer';
+import { LocationKafkaConsumer } from '../../../services/location-kafka-consumer';
 import { LocationService } from '../../../services/location-service';
 import mongoose from 'mongoose';
 import { Kafka } from 'kafkajs';
@@ -70,7 +70,7 @@ describe('Kafka Consumer Integration Tests (with mocks)', () => {
   // Mock the Kafka library
   let mockConsumer: any;
   let mockProducer: any;
-  let kafkaConsumer: KafkaConsumerService;
+  let kafkaConsumer: LocationKafkaConsumer;
   let mockLocationService: jest.Mocked<LocationService>;
   
   beforeEach(() => {
@@ -107,7 +107,7 @@ describe('Kafka Consumer Integration Tests (with mocks)', () => {
       geoAdd: jest.fn().mockResolvedValue(1)
     } as any;
     
-    kafkaConsumer = new KafkaConsumerService(
+    kafkaConsumer = new LocationKafkaConsumer(
       ['localhost:9092'],
       'test-client',
       'test-group',

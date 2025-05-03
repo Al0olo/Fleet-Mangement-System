@@ -11,6 +11,7 @@ import swaggerSpec from '../swagger';
 import { setupVehicleServiceProxy } from './vehicle-proxy';
 import { setupTrackingServiceProxy } from './tracking-proxy';
 import { setupMaintenanceServiceProxy } from './maintenance-proxy';
+import { setupSimulatorServiceProxy } from './simulator-proxy';
 
 /**
  * Setup all application routes
@@ -75,6 +76,20 @@ export function setupRoutes(app: Application, logger: Logger, metricsRegistry: R
     })
     .catch((err: Error) => {
       logger.error(`Error setting up maintenance service routes: ${err}`);
+    });
+
+  // Register simulator service routes with detailed logging
+  logger.info('Explicitly setting up simulator service routes');
+  setupSimulatorServiceProxy(app, logger)
+    .then((success: boolean) => {
+      if (success) {
+        logger.info('Simulator service routes registered successfully');
+      } else {
+        logger.error('Failed to register simulator service routes');
+      }
+    })
+    .catch((err: Error) => {
+      logger.error(`Error setting up simulator service routes: ${err}`);
     });
 
   // Set up all other proxy routes

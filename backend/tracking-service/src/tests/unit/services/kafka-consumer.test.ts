@@ -1,4 +1,5 @@
 import { KafkaConsumerService } from '../../../services/kafka-consumer';
+import { LocationKafkaConsumer } from '../../../services/location-kafka-consumer';
 import { LocationService } from '../../../services/location-service';
 import { jest } from '@jest/globals';
 import winston from 'winston';
@@ -48,14 +49,14 @@ describe('KafkaConsumerService', () => {
 
   const mockRedis = {} as any;
 
-  let kafkaConsumerService: KafkaConsumerService;
+  let kafkaConsumerService: LocationKafkaConsumer;
   let mockLocationService: jest.Mocked<LocationService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     
     // Create a new instance for each test
-    kafkaConsumerService = new KafkaConsumerService(
+    kafkaConsumerService = new LocationKafkaConsumer(
       ['localhost:9092'],
       'test-client',
       'test-group',

@@ -1,28 +1,45 @@
 version: '3.8'
 
 services:
-  # API Gateway
+
   api-gateway:
     build:
-      context: ./backend/api-gateway
+      context: ../api-gateway
+      dockerfile: Dockerfile
+    image: fleet-management/api-gateway:latest
+    container_name: fleet-api-gateway
     ports:
       - "8080:8080"
     environment:
       - NODE_ENV=development
+      - PORT=8080
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - LOG_LEVEL=debug
+      - ENABLE_GLOBAL_RATE_LIMIT=true
+      - INSTANCE_ID=api-gateway-1
+      - REDIS_CONNECT_RETRIES=10
+      - REDIS_CONNECT_RETRY_DELAY=2000
+      - REDIS_STORE_RETRIES=5
+      - SIMULATOR_SERVICE_URL=http://simulator-service:3004
     depends_on:
       - redis
+      - simulator-service
+    restart: unless-stopped
     networks:
       - fleet-network
-    volumes:
-      - ./backend/api-gateway:/app
-      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/gateway/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
-  # Simulator Service
   simulator-service:
     build:
-      context: ./backend/simulator-service
+      context: .
+      dockerfile: Dockerfile
+    container_name: fleet-simulator-service
     ports:
       - "3004:3004"
     environment:
@@ -33,15 +50,20 @@ services:
     depends_on:
       - mongodb
       - kafka
+    command: node dist/server.js
     networks:
       - fleet-network
-    volumes:
-      - ./backend/simulator-service:/app
-      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
 
-  # MongoDB Database
   mongodb:
     image: mongo:6.0
+    container_name: fleet-mongodb
     ports:
       - "27017:27017"
     environment:
@@ -51,20 +73,11 @@ services:
       - mongodb-data:/data/db
     networks:
       - fleet-network
+    restart: unless-stopped
 
-  # Redis Cache
-  redis:
-    image: redis:7.0-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    networks:
-      - fleet-network
-
-  # Kafka and Zookeeper for event streaming
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
+    container_name: fleet-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -72,9 +85,33 @@ services:
       - "2181:2181"
     networks:
       - fleet-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: fleet-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 300M
 
   kafka:
     image: confluentinc/cp-kafka:latest
+    container_name: fleet-kafka
     depends_on:
       - zookeeper
     ports:
@@ -88,24 +125,11 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
       - fleet-network
+    restart: unless-stopped
 
-  # Kafka UI for easier management
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    ports:
-      - "8090:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-    depends_on:
-      - kafka
-    networks:
-      - fleet-network
-
-  # Mongo Express for MongoDB management
   mongo-express:
     image: mongo-express:latest
+    container_name: fleet-mongo-express
     ports:
       - "8081:8081"
     environment:
@@ -116,13 +140,12 @@ services:
       - mongodb
     networks:
       - fleet-network
+    restart: unless-stopped
 
-# Define volumes
-volumes:
-  mongodb-data:
-  redis-data:
-
-# Define networks
 networks:
   fleet-network:
-    driver: bridge 
+    driver: bridge
+
+volumes:
+  mongodb-data: 
+  redis-data:
