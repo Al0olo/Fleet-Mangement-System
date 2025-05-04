@@ -26,7 +26,7 @@ The Simulator Service generates realistic vehicle data to simulate a fleet of ve
 - `POST /api/simulator/simulations/:id/initialize` - Initialize a simulation
 - `POST /api/simulator/simulations/initialize-default` - Initialize a default simulation
 
-### Vehicle Management
+### Vehicle Management  6817b9d5bb8f13b2f67a990a
 
 - `GET /api/simulator/vehicles` - Get all simulated vehicles
 - `GET /api/simulator/vehicles/:id` - Get a specific simulated vehicle

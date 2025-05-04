@@ -1,18 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, CSSProperties } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { AppDispatch, RootState } from '../redux/store';
-import { fetchVehicles, Vehicle } from '../redux/slices/vehicleSlice';
+import { fetchVehicles } from '../redux/slices/vehicleSlice';
 
 const VehicleList = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { vehicles, loading, error } = useSelector((state: RootState) => state.vehicles);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   useEffect(() => {
+    // Force refetch vehicles when component mounts
     dispatch(fetchVehicles());
   }, [dispatch]);
+
+  // Log vehicles to console for debugging
+  useEffect(() => {
+    console.log('Vehicles in component:', vehicles);
+  }, [vehicles]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -22,40 +29,170 @@ const VehicleList = () => {
     setStatusFilter(e.target.value);
   };
 
-  const filteredVehicles = vehicles.filter((vehicle) => {
-    const matchesSearch =
-      vehicle.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.vin.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || vehicle.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const handleTypeFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTypeFilter(e.target.value);
+  };
+
+  const filteredVehicles = Array.isArray(vehicles) 
+    ? vehicles.filter((vehicle) => {
+        // Check if all required fields exist to prevent undefined errors
+        if (!vehicle || !vehicle.model) return false;
+        
+        const model = vehicle.model || '';
+        const manufacturer = vehicle.metadata?.manufacturer || '';
+        const vin = vehicle.metadata?.vin || '';
+        
+        const matchesSearch = searchTerm === '' || 
+          model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          vin.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesStatus = statusFilter === 'all' || vehicle.status === statusFilter;
+        const matchesType = typeFilter === 'all' || vehicle.type === typeFilter;
+        
+        return matchesSearch && matchesStatus && matchesType;
+      })
+    : [];
+
+  // Define styles as React inline style objects
+  const styles: Record<string, CSSProperties> = {
+    vehicleListContainer: {
+      padding: '20px',
+    },
+    vehicleListHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px',
+    },
+    btnPrimary: {
+      backgroundColor: 'var(--primary-color)',
+      color: 'white',
+      padding: '8px 16px',
+      borderRadius: '4px',
+      textDecoration: 'none',
+      fontWeight: 'bold',
+    },
+    vehicleListFilters: {
+      display: 'flex',
+      marginBottom: '20px',
+      gap: '10px',
+    },
+    filterGroup: {
+      flex: 1,
+    },
+    searchInput: {
+      width: '100%',
+      padding: '8px',
+      border: '1px solid #ddd',
+      borderRadius: '4px',
+    },
+    statusFilter: {
+      width: '100%',
+      padding: '8px',
+      border: '1px solid #ddd',
+      borderRadius: '4px',
+    },
+    vehicleGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+      gap: '20px',
+    },
+    vehicleCard: {
+      position: 'relative',
+      padding: '20px',
+      textDecoration: 'none',
+      color: 'var(--text-primary)',
+      transition: 'transform 0.2s',
+    },
+    vehicleCardHover: {
+      transform: 'translateY(-5px)',
+    },
+    vehicleStatus: {
+      position: 'absolute',
+      top: '10px',
+      right: '10px',
+      padding: '4px 8px',
+      borderRadius: '4px',
+      fontSize: '0.8rem',
+      textTransform: 'uppercase' as const,
+    },
+    statusActive: {
+      backgroundColor: 'var(--success-color)',
+      color: 'white',
+    },
+    statusMaintenance: {
+      backgroundColor: 'var(--warning-color)',
+      color: 'white',
+    },
+    statusInactive: {
+      backgroundColor: 'var(--error-color)',
+      color: 'white',
+    },
+    errorMessage: {
+      color: 'var(--error-color)',
+      margin: '20px 0',
+    },
+    debugInfo: {
+      marginTop: '20px',
+      padding: '10px',
+      backgroundColor: '#f5f5f5',
+      border: '1px solid #ddd',
+      borderRadius: '4px',
+      fontFamily: 'monospace',
+      whiteSpace: 'pre-wrap',
+    }
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'active':
+        return { ...styles.vehicleStatus, ...styles.statusActive };
+      case 'maintenance':
+        return { ...styles.vehicleStatus, ...styles.statusMaintenance };
+      case 'inactive':
+      case 'retired':
+        return { ...styles.vehicleStatus, ...styles.statusInactive };
+      default:
+        return styles.vehicleStatus;
+    }
+  };
 
   return (
-    <div className="vehicle-list-container">
-      <div className="vehicle-list-header">
+    <div style={styles.vehicleListContainer}>
+      <div style={styles.vehicleListHeader}>
         <h1>Vehicles</h1>
-        <Link to="/vehicles/new" className="btn btn-primary">Add Vehicle</Link>
+        <Link to="/vehicles/new" style={styles.btnPrimary}>Add Vehicle</Link>
       </div>
 
-      <div className="vehicle-list-filters">
-        <div className="filter-group">
+      <div style={styles.vehicleListFilters}>
+        <div style={styles.filterGroup}>
           <input
             type="text"
-            placeholder="Search by make, model, or VIN"
+            placeholder="Search by model, manufacturer, or VIN"
             value={searchTerm}
             onChange={handleSearch}
-            className="search-input"
+            style={styles.searchInput}
           />
         </div>
-        <div className="filter-group">
-          <select value={statusFilter} onChange={handleStatusFilter} className="status-filter">
+        <div style={styles.filterGroup}>
+          <select value={statusFilter} onChange={handleStatusFilter} style={styles.statusFilter}>
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
             <option value="maintenance">Maintenance</option>
             <option value="inactive">Inactive</option>
+            <option value="retired">Retired</option>
+          </select>
+        </div>
+        <div style={styles.filterGroup}>
+          <select value={typeFilter} onChange={handleTypeFilter} style={styles.statusFilter}>
+            <option value="all">All Types</option>
+            <option value="truck">Truck</option>
+            <option value="excavator">Excavator</option>
+            <option value="loader">Loader</option>
+            <option value="bulldozer">Bulldozer</option>
+            <option value="crane">Crane</option>
+            <option value="other">Other</option>
           </select>
         </div>
       </div>
@@ -63,110 +200,29 @@ const VehicleList = () => {
       {loading ? (
         <div>Loading vehicles...</div>
       ) : error ? (
-        <div className="error-message">{error}</div>
+        <div style={styles.errorMessage}>{error}</div>
       ) : (
-        <div className="vehicle-grid">
-          {filteredVehicles.length === 0 ? (
+        <div style={styles.vehicleGrid}>
+          {!Array.isArray(vehicles) || vehicles.length === 0 ? (
+            <div>No vehicles found. Please add a vehicle.</div>
+          ) : filteredVehicles.length === 0 ? (
             <div>No vehicles found matching your filters.</div>
           ) : (
             filteredVehicles.map((vehicle) => (
-              <Link to={`/vehicles/${vehicle.id}`} key={vehicle.id} className="vehicle-card card">
-                <div className={`vehicle-status ${vehicle.status}`}>{vehicle.status}</div>
-                <h3>{vehicle.make} {vehicle.model}</h3>
-                <p>Year: {vehicle.year}</p>
-                <p>VIN: {vehicle.vin}</p>
+              <Link to={`/vehicles/${vehicle.id}`} key={vehicle.id} className="card" style={styles.vehicleCard}>
+                <div style={getStatusStyle(vehicle.status)}>{vehicle.status}</div>
+                <h3>{vehicle.model}</h3>
+                <p><strong>Type:</strong> {vehicle.type}</p>
+                <p><strong>Manufacturer:</strong> {vehicle.metadata?.manufacturer || 'N/A'}</p>
+                <p><strong>Year:</strong> {vehicle.metadata?.year || 'N/A'}</p>
+                {vehicle.metadata?.vin && <p><strong>VIN:</strong> {vehicle.metadata.vin}</p>}
               </Link>
             ))
           )}
         </div>
       )}
 
-      <style jsx>{`
-        .vehicle-list-container {
-          padding: 20px;
-        }
-        
-        .vehicle-list-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 20px;
-        }
-        
-        .btn-primary {
-          background-color: var(--primary-color);
-          color: white;
-          padding: 8px 16px;
-          border-radius: 4px;
-          text-decoration: none;
-          font-weight: bold;
-        }
-        
-        .vehicle-list-filters {
-          display: flex;
-          margin-bottom: 20px;
-          gap: 10px;
-        }
-        
-        .filter-group {
-          flex: 1;
-        }
-        
-        .search-input, .status-filter {
-          width: 100%;
-          padding: 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-        }
-        
-        .vehicle-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 20px;
-        }
-        
-        .vehicle-card {
-          position: relative;
-          padding: 20px;
-          text-decoration: none;
-          color: var(--text-primary);
-          transition: transform 0.2s;
-        }
-        
-        .vehicle-card:hover {
-          transform: translateY(-5px);
-        }
-        
-        .vehicle-status {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 0.8rem;
-          text-transform: uppercase;
-        }
-        
-        .vehicle-status.active {
-          background-color: var(--success-color);
-          color: white;
-        }
-        
-        .vehicle-status.maintenance {
-          background-color: var(--warning-color);
-          color: white;
-        }
-        
-        .vehicle-status.inactive {
-          background-color: var(--error-color);
-          color: white;
-        }
-        
-        .error-message {
-          color: var(--error-color);
-          margin: 20px 0;
-        }
-      `}</style>
+      
     </div>
   );
 };

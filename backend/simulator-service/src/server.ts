@@ -52,8 +52,31 @@ const startServer = async () => {
     });
 
     // Handle unhandled promise rejections
-    process.on('unhandledRejection', (err) => {
-      logger.error('Unhandled Rejection:', err);
+    process.on('unhandledRejection', (err: Error) => {
+      logger.error('Unhandled Rejection:', { 
+        error: err.message,
+        stack: err.stack
+      });
+      
+      // In production, we might want to keep the server running despite errors
+      if (process.env.NODE_ENV === 'production') {
+        logger.warn('Unhandled rejection occurred, but keeping server running in production mode');
+      } else {
+        // In development/test, exit with error code
+        logger.warn('Shutting down due to unhandled rejection in non-production environment');
+        server.close(() => process.exit(1));
+      }
+    });
+
+    // Handle uncaught exceptions
+    process.on('uncaughtException', (err: Error) => {
+      logger.error('Uncaught Exception:', { 
+        error: err.message,
+        stack: err.stack
+      });
+      
+      // Uncaught exceptions are more serious, so we should exit regardless of environment
+      logger.warn('Shutting down due to uncaught exception');
       server.close(() => process.exit(1));
     });
 

@@ -1,7 +1,7 @@
 import { SimulationConfig, ISimulationConfig, SimulationStatus, IRegion } from '../models/simulation.model';
 import { generateSimulatedVehicles, updateVehicleStatus, getAllSimulatedVehicles, updateVehicleLocation } from './vehicle.service';
 import { createSimulatedTrip, startTrip, completeTrip, getActiveTrips, getNextRoutePoint } from './trip.service';
-import { publishLocationUpdate, publishStatusUpdate, publishMaintenanceEvent } from './kafka.service';
+import { publishLocationUpdate, publishStatusUpdate, publishMaintenanceEvent, publishSensorData } from './kafka.service';
 import { VehicleStatus, IVehicle } from '../models/vehicle.model';
 import { ITrip } from '../models/trip.model';
 import { logger } from '../util/logger';
@@ -220,6 +220,46 @@ const processVehicleUpdates = async (
               nextPoint.point.heading
             );
             
+            // Generate sensor data when vehicle is moving
+            // Engine sensor data
+            await publishSensorData(
+              vehicle.vehicleId,
+              'engine',
+              {
+                isRunning: true,
+                temperature: 80 + Math.random() * 20, // 80-100 degrees
+                rpm: 1200 + Math.random() * 1800, // 1200-3000 rpm
+                hoursOperated: vehicle.engineHours + (Math.random() * 0.01), // Small increment
+                diagnosticCodes: []
+              }
+            );
+            
+            // Calculate fuel consumption based on speed and distance
+            const fuelConsumed = (nextPoint.point.speed * 0.01) * (1 + Math.random() * 0.2); // More fuel at higher speeds
+            const distanceSinceLastReading = nextPoint.point.speed * (5 / 3600); // km traveled in 5 seconds
+            
+            // Fuel sensor data
+            await publishSensorData(
+              vehicle.vehicleId,
+              'fuel',
+              {
+                fuelLevel: Math.max(0, Math.min(100, vehicle.fuelLevel - fuelConsumed * 0.1)),
+                fuelConsumed: fuelConsumed,
+                distanceSinceLastReading: distanceSinceLastReading
+              }
+            );
+            
+            // Utilization sensor data
+            await publishSensorData(
+              vehicle.vehicleId,
+              'utilization',
+              {
+                utilizationRate: 0.7 + Math.random() * 0.3, // 70-100% when moving
+                status: 'active',
+                load: Math.random() * 0.8 // 0-80% load
+              }
+            );
+            
             // Complete trip if we've reached the last point
             if (nextPoint.isLastPoint) {
               await completeTrip(trip.tripId);
@@ -229,6 +269,33 @@ const processVehicleUpdates = async (
       } else {
         // Vehicle is not on a trip
         if (vehicle.status === VehicleStatus.IDLE) {
+          // Send idle vehicle sensor data occasionally
+          if (Math.random() < 0.5) { // 50% chance each cycle
+            // Engine sensor data for idle vehicle
+            await publishSensorData(
+              vehicle.vehicleId,
+              'engine',
+              {
+                isRunning: Math.random() > 0.7, // 30% chance engine is running while idle
+                temperature: 40 + Math.random() * 20, // 40-60 degrees when cool
+                rpm: Math.random() > 0.7 ? 800 + Math.random() * 200 : 0, // Idle RPM or off
+                hoursOperated: vehicle.engineHours,
+                diagnosticCodes: []
+              }
+            );
+            
+            // Utilization sensor data for idle vehicle
+            await publishSensorData(
+              vehicle.vehicleId,
+              'utilization',
+              {
+                utilizationRate: Math.random() * 0.2, // 0-20% utilization when idle
+                status: 'idle',
+                load: 0
+              }
+            );
+          }
+          
           // Random chance to start a new trip
           if (Math.random() < 0.3) {
             const trip = await createSimulatedTrip(vehicle, simulation.region);
@@ -246,6 +313,33 @@ const processVehicleUpdates = async (
             );
           }
         } else if (vehicle.status === VehicleStatus.MAINTENANCE) {
+          // Maintenance vehicle sensor data
+          if (Math.random() < 0.7) { // 70% chance each cycle
+            // Engine sensor data for maintenance vehicle
+            await publishSensorData(
+              vehicle.vehicleId,
+              'engine',
+              {
+                isRunning: false,
+                temperature: 20 + Math.random() * 10, // Cold engine
+                rpm: 0,
+                hoursOperated: vehicle.engineHours,
+                diagnosticCodes: ['P0128', 'P0300'] // Sample diagnostic codes
+              }
+            );
+            
+            // Utilization sensor data for maintenance vehicle
+            await publishSensorData(
+              vehicle.vehicleId,
+              'utilization',
+              {
+                utilizationRate: 0, // 0% utilization in maintenance
+                status: 'maintenance',
+                load: 0
+              }
+            );
+          }
+          
           // Random chance to complete maintenance
           if (Math.random() < 0.1) {
             await updateVehicleStatus(vehicle.vehicleId, VehicleStatus.IDLE);

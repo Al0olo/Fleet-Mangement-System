@@ -83,7 +83,7 @@ export function createServer(customLogger?: winston.Logger) {
 
   // Initialize Express app
   const app: Application = express();
-  const PORT: number = parseInt(process.env.PORT || '3002', 10);
+  const PORT: number = parseInt(process.env.PORT || '3001', 10);
   
   // Set logger in app.locals for access in routes
   app.locals.logger = logger;
@@ -123,7 +123,9 @@ export function createServer(customLogger?: winston.Logger) {
 
   // Connect to Redis
   const connectRedis = async () => {
-    const REDIS_URI = process.env.REDIS_URI || 'redis://localhost:6379';
+    const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
+    const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
+    const REDIS_URI = `redis://${REDIS_HOST}:${REDIS_PORT}`;
     const RETRY_CONNECTS = parseInt(process.env.REDIS_RETRY_CONNECTS || '5', 10);
     const RETRY_INTERVAL = parseInt(process.env.REDIS_RETRY_INTERVAL || '5000', 10);
     

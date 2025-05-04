@@ -181,7 +181,7 @@ export default class ScheduleService {
     
     const query: Record<string, any> = {
       scheduledDate: { $lt: now },
-      status: { $in: ['scheduled', 'in-progress'] }
+      status: { $in: ['scheduled', 'in-progress', 'overdue'] }
     };
     
     if (filters.vehicleId) {
@@ -206,7 +206,7 @@ export default class ScheduleService {
     const result = await MaintenanceSchedule.updateMany(
       {
         scheduledDate: { $lt: now },
-        status: 'scheduled'
+        status: { $in: ['scheduled', 'in-progress'] }
       },
       {
         $set: { status: 'overdue' }

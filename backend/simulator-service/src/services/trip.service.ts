@@ -223,7 +223,7 @@ export const startTrip = async (tripId: string): Promise<ITrip | null> => {
     await updateVehicleStatus(trip.vehicleId, VehicleStatus.RUNNING);
     
     // Publish trip start event
-    await publishTripEvent(trip.vehicleId, trip.tripId, EventType.TRIP_START);
+    await publishTripEvent(trip.vehicleId, trip.tripId, EventType.TRIP_STARTED);
     
     logger.info(`Started trip: ${tripId} for vehicle ${trip.vehicleId}`);
     return trip;
@@ -248,20 +248,22 @@ export const completeTrip = async (tripId: string): Promise<ITrip | null> => {
     // Update trip status
     trip.status = TripStatus.COMPLETED;
     trip.actualEndTime = new Date();
-    trip.currentLocation = trip.endLocation;
+    
+    // Mark all waypoints as visited
+    trip.waypoints.forEach(waypoint => {
+      waypoint.isVisited = true;
+    });
+    
     await trip.save();
     
-    // Update vehicle status and location
+    // Update vehicle status
     await updateVehicleStatus(trip.vehicleId, VehicleStatus.IDLE);
-    await updateVehicleLocation(
-      trip.vehicleId, 
-      trip.endLocation, 
-      0, 
-      0
-    );
     
-    // Publish trip end event
-    await publishTripEvent(trip.vehicleId, trip.tripId, EventType.TRIP_END);
+    // Update vehicle location to the end location
+    await updateVehicleLocation(trip.vehicleId, trip.endLocation);
+    
+    // Publish trip completed event
+    await publishTripEvent(trip.vehicleId, trip.tripId, EventType.TRIP_COMPLETED);
     
     logger.info(`Completed trip: ${tripId} for vehicle ${trip.vehicleId}`);
     return trip;
