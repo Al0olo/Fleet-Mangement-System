@@ -18,6 +18,9 @@ This project follows a microservice architecture with:
   - MongoDB for persistent storage
   - Redis for caching
   - Kafka for event streaming
+  - Mongo Express for database administration
+
+> **Detailed Architecture Documentation**: For comprehensive architecture diagrams, data flows, component interactions, and detailed descriptions of each microservice, please refer to the [Architecture Documentation](docs/architecture.md) in the docs directory.
 
 ### Why Microservices?
 I've chosen a microservice architecture for this system for several key benefits:
@@ -50,7 +53,13 @@ Processes location data from IoT devices and provides real-time tracking.
 Manages maintenance records and schedules.
 
 #### Analytics Service
-Provides usage statistics and reports.
+Provides comprehensive analytics and reporting features:
+- Usage statistics for individual vehicles and entire fleet
+- Performance metrics tracking and analysis
+- Cost analysis and reporting
+- Customizable reports with different time periods
+- Real-time data processing via Kafka integration
+- Historical data aggregation and analysis
 
 #### Simulator Service
 Generates realistic IoT device data to simulate vehicle movements, sensor readings, and status updates. This service:
@@ -64,15 +73,22 @@ The system uses event-driven architecture with key flows:
 - Real-time location updates
 - Vehicle registration
 - Maintenance scheduling
+- Analytics event processing
 
 ## Technology Stack
 
 ### Backend
-- Node.js/Express
-- MongoDB
-- Redis
-- Kafka/Event Streaming
-- API Gateway : Express Gateway
+- **Node.js/Express**: Core server framework
+- **TypeScript**: For enhanced type safety and development experience
+- **MongoDB**: Main persistent storage
+- **Mongoose**: MongoDB object modeling
+- **Redis**: Fast caching layer
+- **Kafka**: Event streaming platform for real-time data processing
+- **API Gateway**: Express-based API gateway
+- **Swagger/OpenAPI**: API documentation
+- **Winston**: Advanced logging
+- **Prometheus**: Metrics collection for monitoring
+- **Mongo Express**: Web-based MongoDB admin interface
 
 ### Frontend
 - React
@@ -82,7 +98,17 @@ The system uses event-driven architecture with key flows:
 ### DevOps
 - Docker
 - Docker Compose
-- Github Actions
+- GitHub Actions CI/CD
+- Jest for testing
+- ESLint for code quality
+
+### Testing Infrastructure
+- **Unit Tests**: For isolated testing of service components
+- **Integration Tests**: For testing service interactions and API endpoints
+- **Mocking Framework**: For simulating dependencies during testing
+- **CI Pipeline**: Automated testing on pull requests and pushes
+- **Test Coverage Reports**: Track code coverage across services
+- **JUnit Reports**: Standardized test reporting
 
 ## Features
 
@@ -111,9 +137,12 @@ The system uses event-driven architecture with key flows:
   - Alerts and notifications
 
 - Analytics Service:
-  - Usage statistics
-  - Performance metrics
-  - Cost analysis
+  - Usage statistics and fleet-wide analytics
+  - Performance metrics tracking
+  - Cost analysis and reporting
+  - Customizable report generation
+  - Data aggregation and historical analysis
+  - Real-time event processing with Kafka
 
 - Simulator Service:
   - Generation of synthetic IoT device data
@@ -135,11 +164,37 @@ The system uses event-driven architecture with key flows:
 - Node.js (v18 or higher)
 - MongoDB
 - Redis
+- Kafka
 - Docker and Docker Compose (for containerized setup)
 
 ### Docker Setup
 1. Clone the repository
 2. Run `docker-compose up` to spin up all services
+3. Access the following services:
+   - Frontend: http://localhost:5000
+   - API Gateway: http://localhost:8080
+   - Mongo Express: http://localhost:8081
+   - Kafka UI: http://localhost:8090
+
+## Testing
+The project includes a comprehensive testing suite:
+
+```shell
+# Run all tests
+npm test
+
+# Run unit tests only
+npm run test:unit
+
+# Run integration tests only
+npm run test:integration
+
+# Generate test coverage report
+npm run test:coverage
+```
+
+## CI/CD
+The project uses GitHub Actions for continuous integration and delivery. Each service has its own CI pipeline that runs on pull requests and pushes to main branches.
 
 ## API Documentation
 API documentation is available at `/api/docs` when running the services.
@@ -156,5 +211,6 @@ Fleet-Management-System/
 │   ├── analytics/    # Analytics service
 │   └── simulator/    # IoT data simulator service
 ├── docs/             # Documentation
+├── .github/          # GitHub Actions workflows
 └── .docker/          # Docker configuration
 ```
