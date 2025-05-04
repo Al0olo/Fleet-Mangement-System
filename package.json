@@ -1,5 +1,0 @@
-{
-  "devDependencies": {
-    "@esbuild-plugins/node-globals-polyfill": "^0.2.3"
-  }
-}
