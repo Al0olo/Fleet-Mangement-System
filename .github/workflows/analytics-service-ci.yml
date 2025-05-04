@@ -1,0 +1,71 @@
+name: Analytics Service CI
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'backend/analytics-service/**'
+      - '.github/workflows/analytics-service-ci.yml'
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'backend/analytics-service/**'
+      - '.github/workflows/analytics-service-ci.yml'
+
+jobs:
+  build:
+    name: Build and Test Analytics Service
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'backend/analytics-service/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: backend/analytics-service
+        run: npm ci
+        
+      - name: Run linter
+        working-directory: backend/analytics-service
+        run: npm run lint
+        
+      - name: Build TypeScript
+        working-directory: backend/analytics-service
+        run: npm run build
+        
+      - name: Run tests with coverage
+        working-directory: backend/analytics-service
+        run: npm run test:ci
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: analytics-service-test-results
+          path: backend/analytics-service/test-results/junit.xml
+          
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: analytics-service-coverage-report
+          path: backend/analytics-service/coverage
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image with tests
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend/analytics-service
+          push: false
+          load: true
+          tags: fleet-management/analytics-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max 

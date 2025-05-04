@@ -39,6 +39,91 @@ services:
       - ./backend/simulator-service:/app
       - /app/node_modules
 
+  # Vehicle Service
+  vehicle-service:
+    build:
+      context: ./backend/vehicle-service
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/fleet-vehicles?authSource=admin
+      - KAFKA_BROKERS=kafka:29092
+      - PORT=3000
+    depends_on:
+      - mongodb
+      - kafka
+    networks:
+      - fleet-network
+    volumes:
+      - ./backend/vehicle-service:/app
+      - /app/node_modules
+
+  # Tracking Service
+  tracking-service:
+    build:
+      context: ./backend/tracking-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/fleet-tracking?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKERS=kafka:29092
+      - PORT=3001
+    depends_on:
+      - mongodb
+      - redis
+      - kafka
+    networks:
+      - fleet-network
+    volumes:
+      - ./backend/tracking-service:/app
+      - /app/node_modules
+
+  # Maintenance Service
+  maintenance-service:
+    build:
+      context: ./backend/maintenance-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/fleet-maintenance?authSource=admin
+      - KAFKA_BROKERS=kafka:29092
+      - PORT=3002
+    depends_on:
+      - mongodb
+      - kafka
+    networks:
+      - fleet-network
+    volumes:
+      - ./backend/maintenance-service:/app
+      - /app/node_modules
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: ./backend/analytics-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/fleet-analytics?authSource=admin
+      - KAFKA_BROKERS=kafka:29092
+      - VEHICLE_SERVICE_URL=http://vehicle-service:3000/api
+      - PORT=3003
+    depends_on:
+      - mongodb
+      - kafka
+      - vehicle-service
+    networks:
+      - fleet-network
+    volumes:
+      - ./backend/analytics-service:/app
+      - /app/node_modules
+      
   # MongoDB Database
   mongodb:
     image: mongo:6.0
