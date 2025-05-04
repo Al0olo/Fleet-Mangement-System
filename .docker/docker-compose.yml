@@ -4,7 +4,7 @@ services:
   # API Gateway
   api-gateway:
     build:
-      context: ./backend/api-gateway
+      context: ../backend/api-gateway
     ports:
       - "8080:8080"
     environment:
@@ -22,7 +22,7 @@ services:
   # Simulator Service
   simulator-service:
     build:
-      context: ./backend/simulator-service
+      context: ../backend/simulator-service
     ports:
       - "3004:3004"
     environment:
@@ -42,7 +42,7 @@ services:
   # Vehicle Service
   vehicle-service:
     build:
-      context: ./backend/vehicle-service
+      context: ../backend/vehicle-service
     ports:
       - "3000:3000"
     environment:
@@ -62,7 +62,7 @@ services:
   # Tracking Service
   tracking-service:
     build:
-      context: ./backend/tracking-service
+      context: ../backend/tracking-service
     ports:
       - "3001:3001"
     environment:
@@ -85,7 +85,7 @@ services:
   # Maintenance Service
   maintenance-service:
     build:
-      context: ./backend/maintenance-service
+      context: ../backend/maintenance-service
     ports:
       - "3002:3002"
     environment:
@@ -105,7 +105,7 @@ services:
   # Analytics Service
   analytics-service:
     build:
-      context: ./backend/analytics-service
+      context: ../backend/analytics-service
     ports:
       - "3003:3003"
     environment:
