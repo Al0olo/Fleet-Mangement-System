@@ -12,6 +12,7 @@ import { setupVehicleServiceProxy } from './vehicle-proxy';
 import { setupTrackingServiceProxy } from './tracking-proxy';
 import { setupMaintenanceServiceProxy } from './maintenance-proxy';
 import { setupSimulatorServiceProxy } from './simulator-proxy';
+import { setupAnalyticsServiceProxy } from './analytics-proxy';
 
 /**
  * Setup all application routes
@@ -76,6 +77,20 @@ export function setupRoutes(app: Application, logger: Logger, metricsRegistry: R
     })
     .catch((err: Error) => {
       logger.error(`Error setting up maintenance service routes: ${err}`);
+    });
+
+  // Register analytics service routes with detailed logging
+  logger.info('Explicitly setting up analytics service routes');
+  setupAnalyticsServiceProxy(app, logger)
+    .then((success: boolean) => {
+      if (success) {
+        logger.info('Analytics service routes registered successfully');
+      } else {
+        logger.error('Failed to register analytics service routes');
+      }
+    })
+    .catch((err: Error) => {
+      logger.error(`Error setting up analytics service routes: ${err}`);
     });
 
   // Register simulator service routes with detailed logging

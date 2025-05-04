@@ -77,6 +77,25 @@ This workflow handles the building, testing, and containerization of the Mainten
      - Uploads test results and coverage reports
      - Builds a Docker image (but doesn't push it)
 
+### Analytics Service CI
+
+**File:** [analytics-service-ci.yml](./workflows/analytics-service-ci.yml)
+
+This workflow handles the building, testing, and containerization of the Analytics Service:
+
+1. **Trigger**: 
+   - Pull requests to `master` or `main` that modify files in `backend/analytics-service/`
+   - Pushes to `master` or `main` that modify files in `backend/analytics-service/`
+
+2. **Jobs**:
+   - `build`: Builds and tests the Analytics Service application
+     - Installs Node.js dependencies
+     - Runs the linter
+     - Builds TypeScript code
+     - Runs tests with coverage
+     - Uploads test results and coverage reports
+     - Builds a Docker image (but doesn't push it)
+
 ### Simulator Service CI
 
 **File:** [simulator-service-ci.yml](./workflows/simulator-service-ci.yml)
