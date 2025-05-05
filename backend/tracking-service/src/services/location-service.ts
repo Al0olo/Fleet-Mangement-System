@@ -195,7 +195,6 @@ export class LocationService {
       if (error instanceof Error) {
         this.logger.error(`Error updating Redis cache: ${error.message}`);
       }
-      // Don't rethrow since this is a background operation
     }
   }
 
@@ -223,7 +222,6 @@ export class LocationService {
       if (error instanceof Error) {
         this.logger.error(`Error updating geo index: ${error.message}`);
       }
-      // Don't rethrow since this is a background operation
     }
   }
 } 

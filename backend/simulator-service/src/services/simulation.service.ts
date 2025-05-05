@@ -185,7 +185,6 @@ const processVehicleUpdates = async (
 ): Promise<void> => {
   const currentTime = new Date();
   const activeVehicleIds = activeTrips.map(trip => trip.vehicleId);
-  // const vehiclesToUpdate: IVehicle[] = []; // Unused variable
   
   // Map of vehicle IDs to trips
   const tripsByVehicleId = activeTrips.reduce((map, trip) => {

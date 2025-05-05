@@ -58,11 +58,9 @@ const startServer = async () => {
         stack: err.stack
       });
       
-      // In production, we might want to keep the server running despite errors
       if (process.env.NODE_ENV === 'production') {
-        logger.warn('Unhandled rejection occurred, but keeping server running in production mode');
+        logger.warn('Unhandled rejection occurred');
       } else {
-        // In development/test, exit with error code
         logger.warn('Shutting down due to unhandled rejection in non-production environment');
         server.close(() => process.exit(1));
       }
@@ -74,10 +72,13 @@ const startServer = async () => {
         error: err.message,
         stack: err.stack
       });
-      
-      // Uncaught exceptions are more serious, so we should exit regardless of environment
-      logger.warn('Shutting down due to uncaught exception');
-      server.close(() => process.exit(1));
+
+      if (process.env.NODE_ENV === 'production') {
+        logger.warn('Unhandled exception occurred');
+      } else {
+        logger.warn('Shutting down due to unhandled exception in non-production environment');
+        server.close(() => process.exit(1));
+      }
     });
 
     // Handle SIGTERM
@@ -97,7 +98,6 @@ const startServer = async () => {
   }
 };
 
-// Only start the server if not being imported for tests
 // NODE_ENV is typically set to 'test' by Jest
 if (process.env.NODE_ENV !== 'test') {
   startServer();

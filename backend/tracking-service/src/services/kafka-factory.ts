@@ -123,7 +123,6 @@ export const createStatusConsumer = (
           setTimeout(attemptStart, retryInterval);
         } else {
           logger.error(`Failed to start Status Kafka consumer after ${maxRetries} attempts`);
-          // Don't crash the application, just warn that the Kafka consumer is not available
         }
       }
     };
@@ -185,7 +184,6 @@ export const createEventConsumer = (
           setTimeout(attemptStart, retryInterval);
         } else {
           logger.error(`Failed to start Event Kafka consumer after ${maxRetries} attempts`);
-          // Don't crash the application, just warn that the Kafka consumer is not available
         }
       }
     };
