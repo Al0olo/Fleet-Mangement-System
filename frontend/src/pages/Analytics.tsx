@@ -7,6 +7,14 @@ import {
   fetchUtilizationAnalytics,
   fetchAnalyticsReports 
 } from '../redux/slices/analyticsSlice';
+import {
+  BarChart, Bar,
+  LineChart, Line,
+  PieChart, Pie, Cell,
+  AreaChart, Area,
+  XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 
 const periodOptions = [
   { value: 'daily', label: 'Daily' },
@@ -16,6 +24,34 @@ const periodOptions = [
   { value: 'yearly', label: 'Yearly' },
   { value: 'custom', label: 'Custom' }
 ];
+
+// Helper function to generate mock time-series data for charts
+const generateMockTrendData = (startDate: string, endDate: string) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // If period is too long, generate fewer data points (e.g. weekly instead of daily)
+  const interval = daysDiff > 30 ? Math.floor(daysDiff / 15) : 1;
+  const dataPoints: {date: string; utilization: number; distance: number}[] = [];
+  
+  for (let i = 0; i < daysDiff; i += interval) {
+    const currentDate = new Date(start);
+    currentDate.setDate(currentDate.getDate() + i);
+    
+    // Generate some realistic-looking mock data with slight randomness
+    const utilization = 70 + Math.random() * 20; // 70-90% utilization
+    const distance = Math.round(100 + Math.random() * 50); // 100-150 km
+    
+    dataPoints.push({
+      date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      utilization: Number(utilization.toFixed(1)),
+      distance: distance
+    });
+  }
+  
+  return dataPoints;
+};
 
 const Analytics = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -100,17 +136,21 @@ const Analytics = () => {
           <h2>Fleet Overview</h2>
           <div className="summary-stat">
             <span className="stat-label">Total Vehicles</span>
-            <span className="stat-value">{analytics.totalVehicles || 0}</span>
+            <span className="stat-value">
+              {analytics?.data?.data?.fleetOverview?.totalVehicles || 0}
+            </span>
           </div>
           <div className="summary-stat">
             <span className="stat-label">Active Vehicles</span>
-            <span className="stat-value">{analytics.activeVehicles || 0}</span>
+            <span className="stat-value">
+              {analytics?.data?.data?.fleetOverview?.vehiclesByStatus?.active || 0}
+            </span>
           </div>
           <div className="summary-stat">
             <span className="stat-label">Utilization Rate</span>
             <span className="stat-value">
-              {analytics.vehicleUtilization && analytics.vehicleUtilization.length > 0
-                ? `${(analytics.vehicleUtilization.reduce((sum, v) => sum + v.utilizationRate, 0) / analytics.vehicleUtilization.length).toFixed(1)}%`
+              {analytics?.data?.data?.performanceMetrics?.utilization?.avgValue
+                ? `${(analytics.data.data.performanceMetrics.utilization.avgValue * 100).toFixed(1)}%`
                 : 'N/A'}
             </span>
           </div>
@@ -121,16 +161,16 @@ const Analytics = () => {
           <div className="summary-stat">
             <span className="stat-label">Total Costs</span>
             <span className="stat-value">
-              {analytics.maintenanceCosts && analytics.maintenanceCosts.length > 0
-                ? `$${analytics.maintenanceCosts.reduce((sum, v) => sum + v.totalCost, 0).toLocaleString()}`
+              {analytics?.data?.data?.performanceMetrics?.costPerHour
+                ? `$${(analytics.data.data.performanceMetrics.costPerHour.avgValue * analytics.data.data.usageStats.totalHours).toLocaleString()}`
                 : 'N/A'}
             </span>
           </div>
           <div className="summary-stat">
-            <span className="stat-label">Average Cost per Vehicle</span>
+            <span className="stat-label">Average Cost per Hour</span>
             <span className="stat-value">
-              {analytics.maintenanceCosts && analytics.maintenanceCosts.length > 0 && analytics.totalVehicles
-                ? `$${(analytics.maintenanceCosts.reduce((sum, v) => sum + v.totalCost, 0) / analytics.totalVehicles).toLocaleString()}`
+              {analytics?.data?.data?.performanceMetrics?.costPerHour
+                ? `$${analytics.data.data.performanceMetrics.costPerHour.avgValue.toLocaleString()}`
                 : 'N/A'}
             </span>
           </div>
@@ -141,16 +181,16 @@ const Analytics = () => {
           <div className="summary-stat">
             <span className="stat-label">Total Distance</span>
             <span className="stat-value">
-              {analytics.mileageData && analytics.mileageData.length > 0
-                ? `${analytics.mileageData.reduce((sum, v) => sum + v.totalMileage, 0).toLocaleString()} km`
+              {analytics?.data?.data?.usageStats?.totalDistance
+                ? `${analytics.data.data.usageStats.totalDistance.toLocaleString()} km`
                 : 'N/A'}
             </span>
           </div>
           <div className="summary-stat">
             <span className="stat-label">Fuel Consumption</span>
             <span className="stat-value">
-              {analytics.fuelConsumption && analytics.fuelConsumption.length > 0
-                ? `${analytics.fuelConsumption.reduce((sum, v) => sum + v.totalConsumption, 0).toLocaleString()} L`
+              {analytics?.data?.data?.usageStats?.totalFuel
+                ? `${analytics.data.data.usageStats.totalFuel.toLocaleString()} L`
                 : 'N/A'}
             </span>
           </div>
@@ -159,34 +199,110 @@ const Analytics = () => {
 
       <div className="card chart-container">
         <h2>Performance Charts</h2>
-        <div className="placeholder-chart">
-          <p>Charts will be displayed here</p>
-        </div>
+        {analytics?.data?.data?.performanceMetrics ? (
+          <div className="charts-grid">
+            <div className="chart">
+              <h3>Utilization Rate</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={[
+                    { 
+                      name: 'Utilization', 
+                      value: analytics.data.data.performanceMetrics.utilization.avgValue * 100,
+                      min: analytics.data.data.performanceMetrics.utilization.minValue * 100,
+                      max: analytics.data.data.performanceMetrics.utilization.maxValue * 100
+                    }
+                  ]}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip formatter={(value) => [`${(value as number).toFixed(1)}%`, 'Rate']} />
+                  <Legend />
+                  <Bar name="Average" dataKey="value" fill="#8884d8" />
+                  <Bar name="Min" dataKey="min" fill="#82ca9d" />
+                  <Bar name="Max" dataKey="max" fill="#ffc658" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="chart">
+              <h3>Cost Per Hour</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={[
+                    { 
+                      name: 'Cost', 
+                      value: analytics.data.data.performanceMetrics.costPerHour.avgValue,
+                      min: analytics.data.data.performanceMetrics.costPerHour.minValue,
+                      max: analytics.data.data.performanceMetrics.costPerHour.maxValue
+                    }
+                  ]}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis label={{ value: 'Cost ($)', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip formatter={(value) => [`$${(value as number).toFixed(2)}`, 'Cost']} />
+                  <Legend />
+                  <Bar name="Average" dataKey="value" fill="#8884d8" />
+                  <Bar name="Min" dataKey="min" fill="#82ca9d" />
+                  <Bar name="Max" dataKey="max" fill="#ffc658" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="chart" style={{ gridColumn: '1 / -1' }}>
+              <h3>Performance Trends</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart
+                  data={generateMockTrendData(startDate, endDate)}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis yAxisId="left" label={{ value: 'Utilization (%)', angle: -90, position: 'insideLeft' }} />
+                  <YAxis yAxisId="right" orientation="right" label={{ value: 'Distance (km)', angle: 90, position: 'insideRight' }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line yAxisId="left" type="monotone" dataKey="utilization" stroke="#8884d8" name="Utilization %" />
+                  <Line yAxisId="right" type="monotone" dataKey="distance" stroke="#82ca9d" name="Distance (km)" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ) : (
+          <div className="placeholder-chart">
+            <p>No performance data available</p>
+          </div>
+        )}
       </div>
 
       <div className="card">
-        <h2>Top Performers</h2>
-        {analytics.vehicleUtilization && analytics.vehicleUtilization.length > 0 ? (
-          <div className="top-performers">
+        <h2>Metrics Overview</h2>
+        {analytics?.data?.data?.performanceMetrics ? (
+          <div className="performance-metrics">
             <table>
               <thead>
                 <tr>
-                  <th>Vehicle ID</th>
-                  <th>Utilization Rate</th>
-                  <th>Hours Active</th>
+                  <th>Metric</th>
+                  <th>Average</th>
+                  <th>Min</th>
+                  <th>Max</th>
                 </tr>
               </thead>
               <tbody>
-                {analytics.vehicleUtilization
-                  .sort((a, b) => b.utilizationRate - a.utilizationRate)
-                  .slice(0, 5)
-                  .map((vehicle) => (
-                    <tr key={vehicle.vehicleId}>
-                      <td>{vehicle.vehicleId}</td>
-                      <td>{vehicle.utilizationRate.toFixed(1)}%</td>
-                      <td>{vehicle.hoursActive.toLocaleString()} hrs</td>
-                    </tr>
-                  ))}
+                {Object.entries(analytics.data.data?.performanceMetrics).map(([key, metric]: [string, any]) => (
+                  <tr key={key}>
+                    <td>{key === 'fuelEfficiency' ? 'Fuel Efficiency' : 
+                         key === 'utilization' ? 'Utilization Rate' : 
+                         key === 'costPerHour' ? 'Cost Per Hour' : key}</td>
+                    <td>{metric.avgValue.toFixed(2)}</td>
+                    <td>{metric.minValue.toFixed(2)}</td>
+                    <td>{metric.maxValue.toFixed(2)}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -207,21 +323,62 @@ const Analytics = () => {
               <div className="stat-group">
                 <div className="stat-item">
                   <span className="stat-label">Average Utilization Rate</span>
-                  <span className="stat-value">{utilizationData.data.averageUtilizationRate?.toFixed(1)}%</span>
+                  <span className="stat-value">
+                    {utilizationData.data.data?.fleetUtilization?.utilizationAverage?.avgValue 
+                      ? `${(utilizationData.data.data?.fleetUtilization.utilizationAverage.avgValue * 100).toFixed(1)}%` 
+                      : 'N/A'}
+                  </span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-label">Total Hours Active</span>
-                  <span className="stat-value">{utilizationData.data.totalHoursActive?.toLocaleString()} hrs</span>
+                  <span className="stat-value">
+                    {utilizationData.data.data?.fleetUtilization?.totalHours 
+                      ? `${utilizationData.data.data?.fleetUtilization.totalHours.toLocaleString()} hrs` 
+                      : 'N/A'}
+                  </span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-label">Total Hours Available</span>
-                  <span className="stat-value">{utilizationData.data.totalHoursAvailable?.toLocaleString()} hrs</span>
+                  <span className="stat-label">Total Distance</span>
+                  <span className="stat-value">
+                    {utilizationData.data.data?.fleetUtilization?.totalDistance 
+                      ? `${utilizationData.data.data?.fleetUtilization.totalDistance.toLocaleString()} km` 
+                      : 'N/A'}
+                  </span>
                 </div>
               </div>
             </div>
-            <div className="placeholder-chart">
-              <p>Utilization chart would be displayed here</p>
-            </div>
+            
+            {utilizationData.data.data?.fleetUtilization?.utilizationAverage ? (
+              <div className="chart-wrapper">
+                <h3>Fleet Utilization Breakdown</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Utilized', value: utilizationData.data.data.fleetUtilization.utilizationAverage.avgValue },
+                        { name: 'Idle/Unavailable', value: 1 - utilizationData.data.data.fleetUtilization.utilizationAverage.avgValue }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      <Cell fill="#8884d8" />
+                      <Cell fill="#d0d0d0" />
+                    </Pie>
+                    <Tooltip formatter={(value) => `${((value as number) * 100).toFixed(1)}%`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="placeholder-chart">
+                <p>No utilization data available for chart</p>
+              </div>
+            )}
           </div>
         ) : (
           <p>No utilization data available</p>
@@ -229,32 +386,42 @@ const Analytics = () => {
       </div>
 
       <div className="card">
-        <h2>Vehicle Utilization Breakdown</h2>
-        {utilizationData && utilizationData.data && utilizationData.data.vehicleUtilization ? (
-          <div className="vehicle-breakdown">
+        <h2>Utilization Metrics</h2>
+        {utilizationData && utilizationData.data && utilizationData.data.data?.fleetUtilization?.utilizationAverage ? (
+          <div className="utilization-metrics">
             <table>
               <thead>
                 <tr>
-                  <th>Vehicle ID</th>
-                  <th>Utilization Rate</th>
-                  <th>Hours Active</th>
-                  <th>Hours Available</th>
+                  <th>Metric</th>
+                  <th>Value</th>
                 </tr>
               </thead>
               <tbody>
-                {utilizationData.data.vehicleUtilization.map((vehicle: any) => (
-                  <tr key={vehicle.vehicleId}>
-                    <td>{vehicle.vehicleId}</td>
-                    <td>{vehicle.utilizationRate.toFixed(1)}%</td>
-                    <td>{vehicle.hoursActive.toLocaleString()} hrs</td>
-                    <td>{vehicle.hoursAvailable.toLocaleString()} hrs</td>
-                  </tr>
-                ))}
+                <tr>
+                  <td>Average Utilization</td>
+                  <td>{(utilizationData.data.data?.fleetUtilization.utilizationAverage.avgValue * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td>Minimum Utilization</td>
+                  <td>{(utilizationData.data.data?.fleetUtilization.utilizationAverage.minValue * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td>Maximum Utilization</td>
+                  <td>{(utilizationData.data.data?.fleetUtilization.utilizationAverage.maxValue * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td>Standard Deviation</td>
+                  <td>{(utilizationData.data.data?.fleetUtilization.utilizationAverage.stdDev * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td>Number of Records</td>
+                  <td>{utilizationData.data.data?.fleetUtilization.utilizationAverage.count}</td>
+                </tr>
               </tbody>
             </table>
           </div>
         ) : (
-          <p>No vehicle utilization data available</p>
+          <p>No utilization metrics available</p>
         )}
       </div>
     </div>
@@ -269,22 +436,66 @@ const Analytics = () => {
             <div className="summary-stats">
               <div className="stat-group">
                 <div className="stat-item">
-                  <span className="stat-label">Total Costs</span>
-                  <span className="stat-value">${costData.data.totalCost?.toLocaleString()}</span>
+                  <span className="stat-label">Average Cost per Hour</span>
+                  <span className="stat-value">
+                    {costData.data.data?.costMetrics?.costPerHour?.avgValue
+                      ? `$${costData.data.data?.costMetrics.costPerHour.avgValue.toLocaleString()}`
+                      : 'N/A'}
+                  </span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-label">Average Cost per Vehicle</span>
-                  <span className="stat-value">${costData.data.averageCostPerVehicle?.toLocaleString()}</span>
+                  <span className="stat-label">Min Cost per Hour</span>
+                  <span className="stat-value">
+                    {costData.data.data?.costMetrics?.costPerHour?.minValue
+                      ? `$${costData.data.data?.costMetrics.costPerHour.minValue.toLocaleString()}`
+                      : 'N/A'}
+                  </span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-label">Cost per Distance</span>
-                  <span className="stat-value">${costData.data.costPerKm?.toFixed(2)}/km</span>
+                  <span className="stat-label">Max Cost per Hour</span>
+                  <span className="stat-value">
+                    {costData.data.data?.costMetrics?.costPerHour?.maxValue
+                      ? `$${costData.data.data?.costMetrics.costPerHour.maxValue.toLocaleString()}`
+                      : 'N/A'}
+                  </span>
                 </div>
               </div>
             </div>
-            <div className="placeholder-chart">
-              <p>Cost breakdown chart would be displayed here</p>
-            </div>
+            
+            {costData.data.data?.costMetrics?.costPerHour ? (
+              <div className="chart-wrapper">
+                <h3>Cost Distribution</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart
+                    data={[
+                      {
+                        name: 'Min',
+                        value: costData.data.data.costMetrics.costPerHour.minValue
+                      },
+                      {
+                        name: 'Average',
+                        value: costData.data.data.costMetrics.costPerHour.avgValue
+                      },
+                      {
+                        name: 'Max',
+                        value: costData.data.data.costMetrics.costPerHour.maxValue
+                      }
+                    ]}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis label={{ value: 'Cost ($)', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip formatter={(value) => [`$${(value as number).toFixed(2)}`, 'Cost per Hour']} />
+                    <Bar dataKey="value" fill="#82ca9d" name="Cost per Hour" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="placeholder-chart">
+                <p>No cost data available for chart</p>
+              </div>
+            )}
           </div>
         ) : (
           <p>No cost data available</p>
@@ -292,23 +503,30 @@ const Analytics = () => {
       </div>
 
       <div className="card">
-        <h2>Cost Breakdown</h2>
-        {costData && costData.data && costData.data.costBreakdown ? (
+        <h2>Cost Metrics</h2>
+        {costData && costData.data && costData.data.data?.costMetrics ? (
           <div className="cost-breakdown">
             <table>
               <thead>
                 <tr>
-                  <th>Category</th>
-                  <th>Amount</th>
-                  <th>Percentage</th>
+                  <th>Metric</th>
+                  <th>Average</th>
+                  <th>Min</th>
+                  <th>Max</th>
+                  <th>St. Dev</th>
+                  <th>Count</th>
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(costData.data.costBreakdown).map(([category, data]: [string, any]) => (
+                {Object.entries(costData.data.data?.costMetrics).map(([category, data]: [string, any]) => (
                   <tr key={category}>
-                    <td>{category}</td>
-                    <td>${data.amount.toLocaleString()}</td>
-                    <td>{data.percentage.toFixed(1)}%</td>
+                    <td>{category === 'costPerHour' ? 'Cost Per Hour' : 
+                         category === 'costPerKm' ? 'Cost Per Km' : category}</td>
+                    <td>${data.avgValue.toFixed(2)}</td>
+                    <td>${data.minValue.toFixed(2)}</td>
+                    <td>${data.maxValue.toFixed(2)}</td>
+                    <td>${data.stdDev.toFixed(2)}</td>
+                    <td>{data.count}</td>
                   </tr>
                 ))}
               </tbody>
@@ -321,46 +539,88 @@ const Analytics = () => {
     </div>
   );
 
-  const renderReports = () => (
-    <div className="analytics-content">
-      <div className="card">
-        <h2>Saved Analytics Reports</h2>
-        {reports && reports.length > 0 ? (
-          <div className="reports-list">
-            <table>
-              <thead>
-                <tr>
-                  <th>Report Type</th>
-                  <th>Period</th>
-                  <th>Date Range</th>
-                  <th>Created At</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map((report) => (
-                  <tr key={report.id}>
-                    <td>{report.reportType}</td>
-                    <td>{report.period}</td>
-                    <td>
-                      {new Date(report.startDate).toLocaleDateString()} - {new Date(report.endDate).toLocaleDateString()}
-                    </td>
-                    <td>{new Date(report.createdAt).toLocaleDateString()}</td>
-                    <td>
-                      <button className="btn btn-sm">View</button>
-                      <button className="btn btn-sm">Download</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p>No saved reports available</p>
-        )}
+  const renderReports = () => {
+    // Process reports data for the chart
+    const reportTypeCount: Record<string, number> = {};
+    reports.forEach(report => {
+      reportTypeCount[report.reportType] = (reportTypeCount[report.reportType] || 0) + 1;
+    });
+    
+    const reportTypeData = Object.keys(reportTypeCount).map(type => ({
+      name: type.charAt(0).toUpperCase() + type.slice(1),
+      value: reportTypeCount[type]
+    }));
+    
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+    
+    return (
+      <div className="analytics-content">
+        <div className="card">
+          <h2>Saved Analytics Reports</h2>
+          {reports && reports.length > 0 ? (
+            <>
+              <div className="charts-grid">
+                <div className="chart-wrapper">
+                  <h3>Reports by Type</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={reportTypeData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {reportTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [value, 'Count']} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              
+              <div className="reports-list">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Report Type</th>
+                      <th>Period</th>
+                      <th>Date Range</th>
+                      <th>Created At</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reports.map((report) => (
+                      <tr key={report.id}>
+                        <td>{report.reportType}</td>
+                        <td>{report.period}</td>
+                        <td>
+                          {new Date(report.startDate).toLocaleDateString()} - {new Date(report.endDate).toLocaleDateString()}
+                        </td>
+                        <td>{new Date(report.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <button className="btn btn-sm">View</button>
+                          <button className="btn btn-sm">Download</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <p>No saved reports available</p>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="analytics-container">
@@ -436,7 +696,8 @@ const Analytics = () => {
         renderTabContent()
       )}
 
-      <style jsx>{`
+      <style>
+        {`
         .analytics-container {
           padding: 20px;
         }
@@ -528,6 +789,26 @@ const Analytics = () => {
           margin-bottom: 20px;
         }
         
+        .charts-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+          gap: 20px;
+        }
+        
+        .chart, .chart-wrapper {
+          background-color: var(--background-secondary);
+          border-radius: 4px;
+          padding: 15px;
+        }
+        
+        .chart h3, .chart-wrapper h3 {
+          margin-top: 0;
+          margin-bottom: 15px;
+          font-size: 1rem;
+          color: var(--text-secondary);
+          text-align: center;
+        }
+        
         .placeholder-chart {
           height: 300px;
           background-color: var(--background-secondary);
@@ -595,7 +876,8 @@ const Analytics = () => {
           background-color: var(--background-secondary);
           border-radius: 4px;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
