@@ -132,7 +132,7 @@ const Analytics = () => {
   const renderOverview = () => (
     <div>
       <div style={styles.grid}>
-        <div style={styles.card}>
+        <div style={{...styles.card, marginBottom: '24px'}}>
           <div style={styles.cardHeader}>
             <h2 style={styles.cardTitle}>Fleet Overview</h2>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: '#3a85ff'}}>
@@ -142,217 +142,190 @@ const Analytics = () => {
             </svg>
           </div>
           
-          <div style={{marginBottom: '12px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '12px'}}>
-            <span style={styles.statLabel}>Total Vehicles</span>
-            <span style={styles.statValue}>
-              {analytics?.data?.data?.fleetOverview?.totalVehicles || 0}
-            </span>
-          </div>
-          <div style={{marginBottom: '12px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '12px'}}>
-            <span style={styles.statLabel}>Active Vehicles</span>
-            <span style={styles.statValue}>
-              {analytics?.data?.data?.fleetOverview?.vehiclesByStatus?.active || 0}
-            </span>
-          </div>
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            <span style={styles.statLabel}>Utilization Rate</span>
-            <span style={styles.statValue}>
-              {analytics?.data?.data?.performanceMetrics?.utilization?.avgValue
-                ? `${(analytics.data.data.performanceMetrics.utilization.avgValue * 100).toFixed(1)}%`
-                : 'N/A'}
-            </span>
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px'}}>
+            <div style={{padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '8px'}}>
+              <span style={styles.statLabel}>Total Vehicles</span>
+              <span style={{...styles.statValue, display: 'block'}}>
+                {analytics?.data?.data?.fleetOverview?.totalVehicles || 0}
+              </span>
+            </div>
+            <div style={{padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '8px'}}>
+              <span style={styles.statLabel}>Active Vehicles</span>
+              <span style={{...styles.statValue, display: 'block'}}>
+                {analytics?.data?.data?.fleetOverview?.vehiclesByStatus?.active || 0}
+              </span>
+            </div>
+            <div style={{padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '8px'}}>
+              <span style={styles.statLabel}>Utilization Rate</span>
+              <span style={{...styles.statValue, display: 'block'}}>
+                {analytics?.data?.data?.performanceMetrics?.utilization?.avgValue
+                  ? `${(analytics.data.data.performanceMetrics.utilization.avgValue * 100).toFixed(1)}%`
+                  : 'N/A'}
+              </span>
+            </div>
+            <div style={{padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '8px'}}>
+              <span style={styles.statLabel}>Maintenance Costs</span>
+              <span style={{...styles.statValue, display: 'block'}}>
+                {analytics?.data?.data?.performanceMetrics?.costPerHour
+                  ? `$${(analytics.data.data.performanceMetrics.costPerHour.avgValue * analytics.data.data.usageStats.totalHours).toLocaleString()}`
+                  : 'N/A'}
+              </span>
+            </div>
+            <div style={{padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '8px'}}>
+              <span style={styles.statLabel}>Total Distance</span>
+              <span style={{...styles.statValue, display: 'block'}}>
+                {analytics?.data?.data?.usageStats?.totalDistance
+                  ? `${analytics.data.data.usageStats.totalDistance.toLocaleString()} km`
+                  : 'N/A'}
+              </span>
+            </div>
+            <div style={{padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '8px'}}>
+              <span style={styles.statLabel}>Fuel Consumption</span>
+              <span style={{...styles.statValue, display: 'block'}}>
+                {analytics?.data?.data?.usageStats?.totalFuel
+                  ? `${analytics.data.data.usageStats.totalFuel.toLocaleString()} L`
+                  : 'N/A'}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div style={styles.card}>
+        <div style={{...styles.card, marginBottom: '24px'}}>
           <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>Maintenance Costs</h2>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: '#3a85ff'}}>
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
+            <h2 style={styles.cardTitle}>Performance Charts</h2>
           </div>
           
-          <div style={{marginBottom: '12px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '12px'}}>
-            <span style={styles.statLabel}>Total Costs</span>
-            <span style={styles.statValue}>
-              {analytics?.data?.data?.performanceMetrics?.costPerHour
-                ? `$${(analytics.data.data.performanceMetrics.costPerHour.avgValue * analytics.data.data.usageStats.totalHours).toLocaleString()}`
-                : 'N/A'}
-            </span>
-          </div>
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            <span style={styles.statLabel}>Average Cost per Hour</span>
-            <span style={styles.statValue}>
-              {analytics?.data?.data?.performanceMetrics?.costPerHour
-                ? `$${analytics.data.data.performanceMetrics.costPerHour.avgValue.toLocaleString()}`
-                : 'N/A'}
-            </span>
-          </div>
+          {analytics?.data?.data?.performanceMetrics ? (
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px'}}>
+              <div>
+                <h3 style={{fontSize: '16px', fontWeight: 500, color: '#555', marginBottom: '16px', textAlign: 'center' as const}}>Utilization Rate</h3>
+                <div style={styles.chartContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        { 
+                          name: 'Utilization', 
+                          value: analytics.data.data.performanceMetrics.utilization.avgValue * 100,
+                          min: analytics.data.data.performanceMetrics.utilization.minValue * 100,
+                          max: analytics.data.data.performanceMetrics.utilization.maxValue * 100
+                        }
+                      ]}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip formatter={(value) => [`${(value as number).toFixed(1)}%`, 'Rate']} />
+                      <Legend />
+                      <Bar name="Average" dataKey="value" fill="#3a85ff" />
+                      <Bar name="Min" dataKey="min" fill="#82ca9d" />
+                      <Bar name="Max" dataKey="max" fill="#ffc658" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              
+              <div>
+                <h3 style={{fontSize: '16px', fontWeight: 500, color: '#555', marginBottom: '16px', textAlign: 'center' as const}}>Cost Per Hour</h3>
+                <div style={styles.chartContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        { 
+                          name: 'Cost', 
+                          value: analytics.data.data.performanceMetrics.costPerHour.avgValue,
+                          min: analytics.data.data.performanceMetrics.costPerHour.minValue,
+                          max: analytics.data.data.performanceMetrics.costPerHour.maxValue
+                        }
+                      ]}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis label={{ value: 'Cost ($)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip formatter={(value) => [`$${(value as number).toFixed(2)}`, 'Cost']} />
+                      <Legend />
+                      <Bar name="Average" dataKey="value" fill="#3a85ff" />
+                      <Bar name="Min" dataKey="min" fill="#82ca9d" />
+                      <Bar name="Max" dataKey="max" fill="#ffc658" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              
+              <div style={{gridColumn: '1 / -1'}}>
+                <h3 style={{fontSize: '16px', fontWeight: 500, color: '#555', marginBottom: '16px', textAlign: 'center' as const}}>Performance Trends</h3>
+                <div style={styles.chartContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={generateMockTrendData(startDate, endDate)}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis yAxisId="left" label={{ value: 'Utilization (%)', angle: -90, position: 'insideLeft' }} />
+                      <YAxis yAxisId="right" orientation="right" label={{ value: 'Distance (km)', angle: 90, position: 'insideRight' }} />
+                      <Tooltip />
+                      <Legend />
+                      <Line yAxisId="left" type="monotone" dataKey="utilization" stroke="#3a85ff" strokeWidth={2} name="Utilization %" />
+                      <Line yAxisId="right" type="monotone" dataKey="distance" stroke="#82ca9d" strokeWidth={2} name="Distance (km)" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={styles.emptyState}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3v18h18"></path>
+                <path d="m19 9-5 5-4-4-3 3"></path>
+              </svg>
+              <p>No performance data available</p>
+            </div>
+          )}
         </div>
-        
-        <div style={styles.card}>
+
+        <div style={{...styles.card}}>
           <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>Performance</h2>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: '#3a85ff'}}>
-              <path d="m12 14 4-4"></path>
-              <path d="M3.34 19a10 10 0 1 1 17.32 0"></path>
-            </svg>
+            <h2 style={styles.cardTitle}>Metrics Overview</h2>
           </div>
           
-          <div style={{marginBottom: '12px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '12px'}}>
-            <span style={styles.statLabel}>Total Distance</span>
-            <span style={styles.statValue}>
-              {analytics?.data?.data?.usageStats?.totalDistance
-                ? `${analytics.data.data.usageStats.totalDistance.toLocaleString()} km`
-                : 'N/A'}
-            </span>
-          </div>
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            <span style={styles.statLabel}>Fuel Consumption</span>
-            <span style={styles.statValue}>
-              {analytics?.data?.data?.usageStats?.totalFuel
-                ? `${analytics.data.data.usageStats.totalFuel.toLocaleString()} L`
-                : 'N/A'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div style={{...styles.card, ...styles.fullWidth, marginBottom: '24px'}}>
-        <div style={styles.cardHeader}>
-          <h2 style={styles.cardTitle}>Performance Charts</h2>
-        </div>
-        
-        {analytics?.data?.data?.performanceMetrics ? (
-          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px'}}>
-            <div>
-              <h3 style={{fontSize: '16px', fontWeight: 500, color: '#555', marginBottom: '16px', textAlign: 'center'}}>Utilization Rate</h3>
-              <div style={styles.chartContainer}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[
-                      { 
-                        name: 'Utilization', 
-                        value: analytics.data.data.performanceMetrics.utilization.avgValue * 100,
-                        min: analytics.data.data.performanceMetrics.utilization.minValue * 100,
-                        max: analytics.data.data.performanceMetrics.utilization.maxValue * 100
-                      }
-                    ]}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip formatter={(value) => [`${(value as number).toFixed(1)}%`, 'Rate']} />
-                    <Legend />
-                    <Bar name="Average" dataKey="value" fill="#3a85ff" />
-                    <Bar name="Min" dataKey="min" fill="#82ca9d" />
-                    <Bar name="Max" dataKey="max" fill="#ffc658" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            
-            <div>
-              <h3 style={{fontSize: '16px', fontWeight: 500, color: '#555', marginBottom: '16px', textAlign: 'center'}}>Cost Per Hour</h3>
-              <div style={styles.chartContainer}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[
-                      { 
-                        name: 'Cost', 
-                        value: analytics.data.data.performanceMetrics.costPerHour.avgValue,
-                        min: analytics.data.data.performanceMetrics.costPerHour.minValue,
-                        max: analytics.data.data.performanceMetrics.costPerHour.maxValue
-                      }
-                    ]}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis label={{ value: 'Cost ($)', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip formatter={(value) => [`$${(value as number).toFixed(2)}`, 'Cost']} />
-                    <Legend />
-                    <Bar name="Average" dataKey="value" fill="#3a85ff" />
-                    <Bar name="Min" dataKey="min" fill="#82ca9d" />
-                    <Bar name="Max" dataKey="max" fill="#ffc658" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            
-            <div style={{gridColumn: '1 / -1'}}>
-              <h3 style={{fontSize: '16px', fontWeight: 500, color: '#555', marginBottom: '16px', textAlign: 'center'}}>Performance Trends</h3>
-              <div style={styles.chartContainer}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={generateMockTrendData(startDate, endDate)}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" label={{ value: 'Utilization (%)', angle: -90, position: 'insideLeft' }} />
-                    <YAxis yAxisId="right" orientation="right" label={{ value: 'Distance (km)', angle: 90, position: 'insideRight' }} />
-                    <Tooltip />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="utilization" stroke="#3a85ff" strokeWidth={2} name="Utilization %" />
-                    <Line yAxisId="right" type="monotone" dataKey="distance" stroke="#82ca9d" strokeWidth={2} name="Distance (km)" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div style={styles.emptyState}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 3v18h18"></path>
-              <path d="m19 9-5 5-4-4-3 3"></path>
-            </svg>
-            <p>No performance data available</p>
-          </div>
-        )}
-      </div>
-
-      <div style={{...styles.card, ...styles.fullWidth}}>
-        <div style={styles.cardHeader}>
-          <h2 style={styles.cardTitle}>Metrics Overview</h2>
-        </div>
-        
-        {analytics?.data?.data?.performanceMetrics ? (
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Metric</th>
-                <th style={styles.th}>Average</th>
-                <th style={styles.th}>Min</th>
-                <th style={styles.th}>Max</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(analytics.data.data?.performanceMetrics).map(([key, metric]: [string, any]) => (
-                <tr key={key} style={styles.tableRow}>
-                  <td style={styles.td}>{key === 'fuelEfficiency' ? 'Fuel Efficiency' : 
-                     key === 'utilization' ? 'Utilization Rate' : 
-                     key === 'costPerHour' ? 'Cost Per Hour' : key}</td>
-                  <td style={styles.td}>{metric.avgValue.toFixed(2)}</td>
-                  <td style={styles.td}>{metric.minValue.toFixed(2)}</td>
-                  <td style={styles.td}>{metric.maxValue.toFixed(2)}</td>
+          {analytics?.data?.data?.performanceMetrics ? (
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Metric</th>
+                  <th style={styles.th}>Average</th>
+                  <th style={styles.th}>Min</th>
+                  <th style={styles.th}>Max</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div style={styles.emptyState}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect width="18" height="18" x="3" y="3" rx="2"></rect>
-              <path d="M3 9h18"></path>
-              <path d="M3 15h18"></path>
-              <path d="M9 9v12"></path>
-              <path d="M15 9v12"></path>
-            </svg>
-            <p>No data available</p>
-          </div>
-        )}
+              </thead>
+              <tbody>
+                {Object.entries(analytics.data.data?.performanceMetrics).map(([key, metric]: [string, any]) => (
+                  <tr key={key} style={styles.tableRow}>
+                    <td style={styles.td}>{key === 'fuelEfficiency' ? 'Fuel Efficiency' : 
+                       key === 'utilization' ? 'Utilization Rate' : 
+                       key === 'costPerHour' ? 'Cost Per Hour' : key}</td>
+                    <td style={styles.td}>{metric.avgValue.toFixed(2)}</td>
+                    <td style={styles.td}>{metric.minValue.toFixed(2)}</td>
+                    <td style={styles.td}>{metric.maxValue.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div style={styles.emptyState}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                <path d="M3 9h18"></path>
+                <path d="M3 15h18"></path>
+                <path d="M9 9v12"></path>
+                <path d="M15 9v12"></path>
+              </svg>
+              <p>No data available</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -880,7 +853,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '24px',
-    flexWrap: 'wrap',
+    flexWrap: 'wrap' as const,
     gap: '20px'
   },
   title: {
@@ -891,7 +864,7 @@ const styles = {
   filters: {
     display: 'flex',
     gap: '20px',
-    flexWrap: 'wrap',
+    flexWrap: 'wrap' as const,
     alignItems: 'center'
   },
   filterGroup: {
@@ -933,7 +906,7 @@ const styles = {
     fontSize: '15px',
     color: '#555',
     transition: 'all 0.2s',
-    position: 'relative'
+    position: 'relative' as const
   },
   activeTab: {
     color: '#3a85ff',
@@ -942,7 +915,7 @@ const styles = {
   },
   loadingContainer: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
     padding: '48px',
@@ -969,7 +942,7 @@ const styles = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+    gridTemplateColumns: '1fr', // Updated to single column for full width
     gap: '24px',
     marginBottom: '2rem'
   },
@@ -979,7 +952,7 @@ const styles = {
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
     padding: '24px',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column' as const
   },
   cardHeader: {
     display: 'flex',
@@ -1001,7 +974,7 @@ const styles = {
   },
   statGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
     gap: '16px',
     marginBottom: '24px'
   },
@@ -1011,7 +984,7 @@ const styles = {
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
     padding: '16px',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column' as const
   },
   statLabel: {
     fontSize: '14px',
@@ -1024,11 +997,11 @@ const styles = {
   },
   table: {
     width: '100%',
-    borderCollapse: 'collapse',
+    borderCollapse: 'collapse' as const,
     marginTop: '16px'
   },
   th: {
-    textAlign: 'left',
+    textAlign: 'left' as const,
     padding: '12px 16px',
     borderBottom: '1px solid #eee',
     fontWeight: 500,
@@ -1048,7 +1021,7 @@ const styles = {
   },
   emptyState: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
     padding: '48px 24px',
@@ -1056,7 +1029,7 @@ const styles = {
     gap: '16px',
     backgroundColor: '#f9f9f9',
     borderRadius: '8px',
-    textAlign: 'center'
+    textAlign: 'center' as const
   },
   button: {
     padding: '8px 16px',
