@@ -216,6 +216,7 @@ describe('Trip Service', () => {
         vehicleId,
         status: TripStatus.IN_PROGRESS,
         endLocation: { type: 'Point', coordinates: [-73.9, 40.8] },
+        waypoints: [],
         save: jest.fn().mockResolvedValue({
           tripId,
           vehicleId,
@@ -240,9 +241,7 @@ describe('Trip Service', () => {
       );
       expect(vehicleService.updateVehicleLocation).toHaveBeenCalledWith(
         vehicleId,
-        mockTrip.endLocation,
-        0,
-        0
+        mockTrip.endLocation
       );
     });
   });
