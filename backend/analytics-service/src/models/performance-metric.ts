@@ -1,44 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     PerformanceMetric:
- *       type: object
- *       required:
- *         - vehicleId
- *         - metricType
- *         - timestamp
- *         - value
- *       properties:
- *         id:
- *           type: string
- *           description: Auto-generated unique identifier
- *         vehicleId:
- *           type: string
- *           description: Reference to the vehicle
- *         metricType:
- *           type: string
- *           description: Type of metric being recorded
- *           enum: [fuelEfficiency, maintenanceFrequency, utilization, costPerHour, costPerKm]
- *         timestamp:
- *           type: string
- *           format: date-time
- *           description: When the metric was recorded
- *         value:
- *           type: number
- *           description: The metric value
- *         unit:
- *           type: string
- *           description: Unit of measurement
- *       example:
- *         vehicleId: "60d21b4667d0d8992e610c85"
- *         metricType: "fuelEfficiency"
- *         timestamp: "2023-07-15T14:30:00Z"
- *         value: 6.8
- *         unit: "km/l"
- */
 
 // Base interface without Document
 interface IPerformanceMetricBase {
