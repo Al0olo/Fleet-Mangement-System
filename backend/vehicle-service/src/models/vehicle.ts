@@ -1,65 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Vehicle:
- *       type: object
- *       required:
- *         - model
- *         - type
- *         - status
- *       properties:
- *         id:
- *           type: string
- *           description: Auto-generated unique identifier
- *         model:
- *           type: string
- *           description: Vehicle model
- *         type:
- *           type: string
- *           description: Type of vehicle (e.g., truck, excavator, loader)
- *           enum: [truck, excavator, loader, bulldozer, crane, other]
- *         status:
- *           type: string
- *           description: Current vehicle status
- *           enum: [active, maintenance, inactive, retired]
- *         registrationDate:
- *           type: string
- *           format: date-time
- *           description: Date vehicle was registered in the system
- *         metadata:
- *           type: object
- *           description: Additional vehicle specifications
- *           properties:
- *             year:
- *               type: number
- *               description: Manufacturing year
- *             manufacturer:
- *               type: string
- *               description: Vehicle manufacturer
- *             fuelType:
- *               type: string
- *               description: Type of fuel used
- *             capacity:
- *               type: number
- *               description: Load capacity or engine size
- *             vin:
- *               type: string
- *               description: Vehicle Identification Number
- *       example:
- *         model: CAT 336
- *         type: excavator
- *         status: active
- *         registrationDate: 2023-01-15T08:30:00Z
- *         metadata:
- *           year: 2022
- *           manufacturer: Caterpillar
- *           fuelType: diesel
- *           capacity: 36
- *           vin: 4Y1SL65848Z411439
- */
+
 
 // Metadata schema definition
 interface IMetadata {
