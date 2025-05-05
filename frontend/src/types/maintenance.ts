@@ -7,7 +7,7 @@ export interface MaintenanceRecord {
   vehicleId: string;
   type: MaintenanceType;
   description?: string;
-  performedAt: string;
+  performedAt: string | undefined;
   performedBy?: string;
   cost?: number;
   notes?: string;
@@ -15,6 +15,8 @@ export interface MaintenanceRecord {
   status: MaintenanceStatus;
   createdAt: string;
   updatedAt: string;
+  serviceDate?: string | undefined;
+  technician?: string | undefined;
 }
 
 export interface CreateMaintenanceRecordPayload {
@@ -41,16 +43,17 @@ export interface MaintenanceSchedule {
   id: string;
   vehicleId: string;
   type: MaintenanceType;
-  description?: string;
-  scheduledDate: string;
-  assignedTo?: string;
-  estimatedCost?: number;
   priority: SchedulePriority;
   status: ScheduleStatus;
-  notes?: string;
   reminderSent: boolean;
   createdAt: string;
   updatedAt: string;
+  scheduledDate: string;
+  maintenanceType?: string;
+  description?: string;
+  assignedTo?: string;
+  estimatedCost?: number;
+  notes?: string;
 }
 
 export interface CreateMaintenanceSchedulePayload {

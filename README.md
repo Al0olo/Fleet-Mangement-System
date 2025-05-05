@@ -3,10 +3,28 @@
 ## Overview
 This is a full-stack web application for managing a fleet of vehicles. The system allows tracking vehicle locations, maintenance records, and usage statistics. This project is presented to Tenderd as a Software Engineering Assignment.
 
+## Screenshots
+
+### Dashboard
+![Main Dashboard](./assets/main_dashboard.png)
+*Fleet overview dashboard with real-time statistics and activity charts*
+
+### Analytics
+![Analytics Dashboard](./assets/analytics_dashboard.png)
+*Comprehensive analytics dashboard with interactive charts and performance metrics*
+
+### Maintenance Management
+![Maintenance Dashboard](./assets/maintenance_dashboard.png)
+*Maintenance scheduling and record management interface*
+
+### Vehicle Management
+![Vehicle Dashboard](./assets/vehicle_dashboard.png)
+*Detailed vehicle information with tracking and performance data*
+
 ## Architecture
 This project follows a microservice architecture with:
 
-- **Frontend**: React-based web dashboard
+- **Frontend**: React-based web dashboard with TypeScript and Redux
 - **API Gateway**: Single entry point for all client requests
 - **Backend Microservices**: 
   - Vehicle Service
@@ -91,9 +109,13 @@ The system uses event-driven architecture with key flows:
 - **Mongo Express**: Web-based MongoDB admin interface
 
 ### Frontend
-- React
-- Redux
-- Map integration (e.g., Google Maps)
+- **React**: UI library for building component-based interfaces
+- **TypeScript**: For type safety and better developer experience
+- **Redux**: For state management
+- **Recharts**: For data visualization and interactive charts
+- **CSS-in-JS**: Styled components using inline styles
+- **Responsive Design**: Mobile-friendly layouts
+- **SVG Icons**: For consistent and scalable visual elements
 
 ### DevOps
 - Docker
@@ -150,13 +172,28 @@ The system uses event-driven architecture with key flows:
   - Multiple vehicle simulation support
   - Various sensor data simulation (GPS, fuel, engine metrics)
 
-### Frontend Requirements
-- Dashboard with:
-  - Map view of vehicles
-  - Vehicle list with filters and search
-  - Detailed vehicle information
-  - Maintenance history and schedules
-  - Analytics charts and reports
+### Frontend Features
+- **Dashboard**:
+  - Summary cards with key metrics
+  - Interactive charts for analytics visualization
+  - Quick action buttons for common tasks
+  - Recent activity feed
+- **Vehicles Management**:
+  - Detailed vehicle listings with search and filter
+  - Comprehensive vehicle detail pages
+  - Real-time location tracking with map integration
+  - Status indicators and visual feedback
+- **Maintenance System**:
+  - Record management with detailed history
+  - Schedule planning with priority indicators
+  - Alerts for overdue maintenance
+  - Status tracking for in-progress work
+- **Analytics Platform**:
+  - Fleet-wide performance metrics
+  - Cost analysis and utilization statistics
+  - Customizable date ranges and filters
+  - Multiple visualization types (bar, line, pie charts)
+  - Data export capabilities
 
 ## Installation and Setup
 
@@ -167,14 +204,38 @@ The system uses event-driven architecture with key flows:
 - Kafka
 - Docker and Docker Compose (for containerized setup)
 
-### Docker Setup
-1. Clone the repository
-2. Run `docker-compose up` to spin up all services
-3. Access the following services:
-   - Frontend: http://localhost:5000
-   - API Gateway: http://localhost:8080
-   - Mongo Express: http://localhost:8081
-   - Kafka UI: http://localhost:8090
+### Starting the Backend (Microservices)
+1. Navigate to the `.docker` directory:
+   ```bash
+   cd .docker
+   ```
+2. Start all backend services using Docker Compose:
+   ```bash
+   docker-compose up
+   ```
+   This will start all the microservices, databases, and supporting infrastructure.
+
+### Starting the Frontend
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Access the application in your browser at http://localhost:5000
+
+### Access Details
+When running the full stack, you can access:
+- Frontend: http://localhost:5000
+- API Gateway: http://localhost:8080
+- Mongo Express: http://localhost:8081
+- Kafka UI: http://localhost:8090
 
 ## Testing
 The project includes a comprehensive testing suite:

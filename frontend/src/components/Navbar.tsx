@@ -18,8 +18,8 @@ const Navbar = () => {
       justifyContent: 'space-between',
       alignItems: 'center',
       width: '100%',
-      padding: '0 20px',
-      maxWidth: '1200px',
+      padding: '0 8px 0 8px',
+      maxWidth: '100%',
     },
     navbarLogo: {
       color: 'white',

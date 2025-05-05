@@ -51,6 +51,8 @@ export interface MetricTrend {
   value: number;
   change: number;
   trend: 'up' | 'down' | 'stable';
+  date?: string;
+  average?: number;
 }
 
 export interface VehicleComparison {
@@ -71,7 +73,7 @@ export interface AnalyticsReport {
   endDate: string;
   vehicleId?: string;
   createdAt: string;
-  summary: string;
+  updatedAt: string;
   data: any;
 }
 
@@ -106,9 +108,9 @@ const initialState: AnalyticsState = {
 // Async thunks
 export const fetchAnalyticsData = createAsyncThunk(
   'analytics/fetchData',
-  async (_, { rejectWithValue }) => {
+  async (params: { startDate?: string; endDate?: string; period?: string } = {}, { rejectWithValue }) => {
     try {
-      const response = await analyticsService.getFleetAnalytics();
+      const response = await analyticsService.getFleetAnalytics(params);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch analytics data');
