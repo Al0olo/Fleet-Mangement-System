@@ -14,6 +14,8 @@ export interface LocationData {
   heading?: number;
   altitude?: number;
   accuracy?: number;
+  latitude?: number;
+  longitude?: number;
   metadata?: Record<string, any>;
 }
 

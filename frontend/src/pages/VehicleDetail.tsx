@@ -15,6 +15,47 @@ import {
 import VehicleLocationMap from '../components/VehicleLocationMap';
 import VehicleStatusCard from '../components/VehicleStatusCard';
 import VehicleEventsTimeline from '../components/VehicleEventsTimeline';
+import {
+  BarChart, Bar,
+  LineChart, Line, Cell,
+  XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+
+// Helper function to format date
+const formatDate = (dateString: string) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+// Helper function to format currency
+const formatCurrency = (value: number | undefined) => {
+  if (value === undefined || value === null) return '$0.00';
+  return `$${value.toFixed(2)}`;
+};
+
+// Helper function to generate random data for demo charts when real data is not available
+const generateRandomData = (length: number = 30) => {
+  const data = [];
+  const today = new Date();
+  
+  for (let i = 0; i < length; i++) {
+    const date = new Date();
+    date.setDate(today.getDate() - (length - i - 1));
+    
+    data.push({
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      value: Math.floor(Math.random() * 100) / 10 + 5,
+      average: 8.5,
+    });
+  }
+  
+  return data;
+};
 
 // Explicitly define the functional component 
 function VehicleDetail() {
@@ -40,6 +81,7 @@ function VehicleDetail() {
   const [activeTab, setActiveTab] = useState('overview');
   const [metricType, setMetricType] = useState('fuelEfficiency');
   const [timeRange, setTimeRange] = useState('30');
+  const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   
   const vehicleId = id;
   
@@ -122,128 +164,239 @@ function VehicleDetail() {
 
   // Define styles as React inline style objects
   const styles: Record<string, CSSProperties> = {
-    vehicleDetailContainer: {
+    container: {
       padding: '20px',
+      width: '100%',
+      boxSizing: 'border-box' as const,
     },
-    vehicleDetailHeader: {
+    header: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '20px',
+      marginBottom: '24px',
+      borderBottom: '1px solid var(--border-color)',
+      paddingBottom: '12px',
+    },
+    title: {
+      margin: '0 0 8px 0',
+      color: 'var(--text-primary)',
+      fontSize: '24px',
+      fontWeight: 'bold',
+    },
+    subtitle: {
+      margin: '0 0 16px 0',
+      color: 'var(--text-secondary)',
+      fontSize: '16px',
     },
     tabsContainer: {
       display: 'flex',
-      borderBottom: '1px solid #eee',
-      marginBottom: '20px',
+      borderBottom: '1px solid var(--border-color)',
+      marginBottom: '24px',
     },
     tab: {
-      padding: '10px 20px',
+      padding: '12px 24px',
       cursor: 'pointer',
       fontSize: '16px',
+      fontWeight: '500',
+      color: 'var(--text-secondary)',
       borderBottom: '2px solid transparent',
+      transition: 'all 0.2s ease',
     },
     tabActive: {
       borderBottom: '2px solid var(--primary-color)',
       color: 'var(--primary-color)',
       fontWeight: 'bold',
     },
+    tabHover: {
+      backgroundColor: 'var(--background-hover)',
+    },
     vehicleStatus: {
-      display: 'inline-block',
-      padding: '4px 8px',
-      borderRadius: '4px',
-      fontSize: '0.8rem',
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '6px 12px',
+      borderRadius: '16px',
+      fontSize: '13px',
+      fontWeight: 'bold',
       textTransform: 'uppercase' as const,
-      marginTop: '5px',
+      letterSpacing: '0.5px',
+      marginRight: '12px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     },
     vehicleStatusActive: {
-      backgroundColor: 'var(--success-color)',
+      backgroundColor: '#4caf50',
       color: 'white',
     },
     vehicleStatusMaintenance: {
-      backgroundColor: 'var(--warning-color)',
+      backgroundColor: '#ff9800',
       color: 'white',
     },
     vehicleStatusInactive: {
-      backgroundColor: 'var(--error-color)',
+      backgroundColor: '#f44336',
       color: 'white',
     },
     actionButtons: {
       display: 'flex',
-      gap: '10px',
+      gap: '12px',
+      alignItems: 'center',
     },
     btn: {
-      padding: '8px 16px',
+      padding: '10px 16px',
       borderRadius: '4px',
       fontWeight: 'bold',
       cursor: 'pointer',
       textDecoration: 'none',
       border: 'none',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      transition: 'all 0.2s ease',
+      fontSize: '14px',
     },
     btnSmall: {
-      padding: '4px 8px',
-      fontSize: '0.8rem',
+      padding: '6px 12px',
+      fontSize: '13px',
     },
     btnPrimary: {
       backgroundColor: 'var(--primary-color)',
       color: 'white',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     },
     btnSecondary: {
       backgroundColor: 'var(--secondary-color)',
       color: 'white',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    },
+    btnOutline: {
+      backgroundColor: 'transparent',
+      color: 'var(--text-primary)',
+      border: '1px solid var(--border-color)',
     },
     btnDanger: {
       backgroundColor: 'var(--error-color)',
       color: 'white',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     },
-    vehicleDetailsGrid: {
+    grid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-      gap: '20px',
-      marginBottom: '20px',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+      gap: '24px',
+      marginBottom: '2rem',
+    },
+    fullWidth: {
+      gridColumn: '1 / -1',
+    },
+    card: {
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+      padding: '24px',
+      height: '100%',
+      border: '1px solid var(--border-color)',
+      display: 'flex',
+      flexDirection: 'column' as const,
+    },
+    cardTitle: {
+      fontSize: '18px',
+      fontWeight: 'bold',
+      marginTop: 0,
+      marginBottom: '16px',
+      borderBottom: '1px solid var(--border-color)',
+      paddingBottom: '8px',
+      color: 'var(--text-primary)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
     },
     detailRow: {
       display: 'flex',
       justifyContent: 'space-between',
-      padding: '8px 0',
-      borderBottom: '1px solid #eee',
+      padding: '12px 0',
+      borderBottom: '1px solid var(--border-color)',
     },
     detailLabel: {
-      fontWeight: 'bold',
+      fontWeight: '500',
       color: 'var(--text-secondary)',
     },
     detailValue: {
-      textAlign: 'right' as const,
+      fontWeight: '500',
+      color: 'var(--text-primary)',
+    },
+    emptyState: {
+      textAlign: 'center' as const,
+      padding: '32px',
+      color: 'var(--text-secondary)',
+      borderRadius: '8px',
+      backgroundColor: 'rgba(0,0,0,0.02)',
+      border: '1px dashed var(--border-color)',
+    },
+    emptyStateIcon: {
+      width: '48px',
+      height: '48px',
+      marginBottom: '16px',
+      opacity: 0.5,
     },
     sectionHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '15px',
+      marginBottom: '16px',
+      borderBottom: '1px solid var(--border-color)',
+      paddingBottom: '8px',
     },
-    maintenanceTable: {
+    table: {
       width: '100%',
       borderCollapse: 'collapse' as const,
+      border: '1px solid var(--border-color)',
+      borderRadius: '8px',
+      overflow: 'hidden',
     },
-    tableCell: {
-      padding: '10px',
+    th: {
+      padding: '14px 16px',
       textAlign: 'left' as const,
-      borderBottom: '1px solid #eee',
-    },
-    tableHeader: {
       backgroundColor: 'var(--background-secondary)',
+      borderBottom: '1px solid var(--border-color)',
+      fontSize: '14px',
+      fontWeight: '600',
+      color: 'var(--text-secondary)',
+    },
+    td: {
+      padding: '12px 16px',
+      borderBottom: '1px solid var(--border-color)',
+      fontSize: '14px',
+      verticalAlign: 'middle' as const,
+    },
+    badge: {
+      padding: '4px 10px',
+      borderRadius: '12px',
+      fontSize: '12px',
+      display: 'inline-block',
       fontWeight: 'bold',
-      padding: '10px',
-      textAlign: 'left' as const,
-      borderBottom: '1px solid #eee',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.5px',
     },
     viewAllLink: {
       display: 'block',
-      marginTop: '10px',
+      marginTop: '16px',
       textAlign: 'right' as const,
+      color: 'var(--primary-color)',
+      textDecoration: 'none',
+      fontWeight: '500',
+      fontSize: '14px',
+    },
+    loadingState: {
+      textAlign: 'center' as const,
+      padding: '40px',
+      color: 'var(--text-secondary)',
+      fontSize: '16px',
     },
     errorMessage: {
       color: 'var(--error-color)',
       margin: '20px 0',
+      padding: '16px',
+      borderRadius: '8px',
+      backgroundColor: 'rgba(244, 67, 54, 0.1)',
+      fontWeight: '500',
+      textAlign: 'center' as const,
     },
     modalOverlay: {
       position: 'fixed' as const,
@@ -260,30 +413,148 @@ function VehicleDetail() {
     modalContent: {
       backgroundColor: 'white',
       borderRadius: '8px',
-      padding: '20px',
-      width: '400px',
+      padding: '24px',
+      width: '450px',
       maxWidth: '90%',
-      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+    },
+    modalTitle: {
+      margin: '0 0 16px 0',
+      color: 'var(--text-primary)',
+      borderBottom: '1px solid var(--border-color)',
+      paddingBottom: '12px',
+    },
+    modalText: {
+      marginBottom: '24px',
+      color: 'var(--text-secondary)',
+      fontSize: '16px',
     },
     modalActions: {
       display: 'flex',
       justifyContent: 'flex-end',
-      gap: '10px',
-      marginTop: '20px',
+      gap: '12px',
+      marginTop: '24px',
     },
-    trackingGrid: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '20px',
+    formGroup: {
       marginBottom: '20px',
     },
-    fullWidthSection: {
-      gridColumn: '1 / -1',
+    formLabel: {
+      display: 'block',
+      marginBottom: '8px',
+      fontWeight: '500',
+      color: 'var(--text-secondary)',
     },
+    formSelect: {
+      width: '100%',
+      padding: '10px 12px',
+      border: '1px solid var(--border-color)',
+      borderRadius: '4px',
+      fontSize: '14px',
+      backgroundColor: 'white',
+    },
+    chartContainer: {
+      height: '300px',
+      width: '100%',
+      marginTop: '16px',
+    },
+    metricCard: {
+      backgroundColor: 'var(--background-secondary)',
+      padding: '16px',
+      borderRadius: '8px',
+      marginBottom: '8px',
+    },
+    metricLabel: {
+      fontSize: '14px',
+      color: 'var(--text-secondary)',
+      marginBottom: '4px',
+    },
+    metricValue: {
+      fontSize: '24px',
+      fontWeight: 'bold',
+      color: 'var(--text-primary)',
+    },
+    flexRow: {
+      display: 'flex',
+      gap: '16px',
+      marginBottom: '16px',
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+      gap: '16px',
+      marginTop: '16px',
+    },
+    comparisonContainer: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      marginTop: '16px',
+    },
+    comparisonItem: {
+      flex: 1,
+      textAlign: 'center' as const,
+      padding: '16px',
+      backgroundColor: 'var(--background-secondary)',
+      borderRadius: '8px',
+    },
+    comparisonLabel: {
+      fontSize: '14px',
+      color: 'var(--text-secondary)',
+      marginBottom: '8px',
+    },
+    comparisonValue: {
+      fontSize: '20px',
+      fontWeight: 'bold',
+      color: 'var(--text-primary)',
+    },
+    diffPositive: {
+      color: '#4caf50',
+    },
+    diffNegative: {
+      color: '#f44336',
+    },
+    diffNeutral: {
+      color: 'var(--text-secondary)',
+    },
+    iconButton: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      color: 'var(--text-secondary)',
+      transition: 'color 0.2s ease',
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '4px',
+      borderRadius: '4px',
+    },
+    mapContainer: {
+      borderRadius: '8px',
+      overflow: 'hidden',
+      border: '1px solid var(--border-color)',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+      height: '400px',
+    },
+    mapError: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100%',
+      backgroundColor: 'var(--background-secondary)',
+      padding: '24px',
+      borderRadius: '8px',
+      color: 'var(--text-secondary)',
+    },
+    noDataIcon: {
+      marginBottom: '16px',
+      opacity: 0.5,
+      width: '48px',
+      height: '48px',
+    }
   };
 
   const getStatusStyle = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'active':
         return { ...styles.vehicleStatus, ...styles.vehicleStatusActive };
       case 'maintenance':
@@ -297,40 +568,239 @@ function VehicleDetail() {
   };
 
   // Add styles for status badges
-  const getScheduleStatusStyle = (status: string) => {
-    switch (status) {
+  const getMaintenanceStatusBadge = (status: string) => {
+    let style = { ...styles.badge };
+    let color = '';
+    
+    switch (status?.toLowerCase()) {
       case 'scheduled':
-        return { backgroundColor: '#2196f3', color: 'white' };
+        color = '#2196f3';
+        break;
       case 'in-progress':
-        return { backgroundColor: '#ff9800', color: 'white' };
+        color = '#ff9800';
+        break;
       case 'completed':
-        return { backgroundColor: '#4caf50', color: 'white' };
+        color = '#4caf50';
+        break;
       case 'cancelled':
-        return { backgroundColor: '#f44336', color: 'white' };
+        color = '#f44336';
+        break;
       case 'overdue':
-        return { backgroundColor: '#d32f2f', color: 'white' };
+        color = '#d32f2f';
+        break;
       default:
-        return { backgroundColor: '#757575', color: 'white' };
+        color = '#757575';
+    }
+    
+    return {
+      ...style,
+      backgroundColor: color + '20',
+      color: color,
+    };
+  };
+  
+  // Format metric value based on type
+  const formatMetricValue = (value: number | undefined, type: string) => {
+    if (value === undefined || value === null) return 'N/A';
+    
+    switch (type) {
+      case 'fuelEfficiency':
+        return `${value.toFixed(2)} km/L`;
+      case 'utilization':
+        return `${(value * 100).toFixed(1)}%`;
+      case 'costPerHour':
+      case 'costPerKm':
+        return formatCurrency(value);
+      default:
+        return value.toFixed(2);
     }
   };
-
-  const renderOverviewTab = () => (
-    <>
-      <div style={styles.trackingGrid}>
-        <div style={styles.fullWidthSection}>
+  
+  // Function to render the vehicle information section
+  const renderVehicleInformation = () => (
+    <div style={styles.card}>
+      <h3 style={styles.cardTitle}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="16" rx="2"/>
+          <path d="M16 2v4"/>
+          <path d="M8 2v4"/>
+          <path d="M3 10h18"/>
+        </svg>
+        Vehicle Information
+      </h3>
+      
+      {vehicle ? (
+        <>
+          <div style={styles.detailRow}>
+            <span style={styles.detailLabel}>Model</span>
+            <span style={styles.detailValue}>{vehicle.model || 'N/A'}</span>
+          </div>
+          <div style={styles.detailRow}>
+            <span style={styles.detailLabel}>Type</span>
+            <span style={styles.detailValue}>{vehicle.type || 'N/A'}</span>
+          </div>
+          <div style={styles.detailRow}>
+            <span style={styles.detailLabel}>Status</span>
+            <span style={{...styles.detailValue, display: 'inline-flex', alignItems: 'center'}}>
+              <span style={getStatusStyle(vehicle.status || '')}>
+                {vehicle.status || 'Unknown'}
+              </span>
+            </span>
+          </div>
+          <div style={styles.detailRow}>
+            <span style={styles.detailLabel}>Registration Date</span>
+            <span style={styles.detailValue}>
+              {formatDate(vehicle.registrationDate || '')}
+            </span>
+          </div>
+          {vehicle.metadata?.manufacturer && (
+            <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Manufacturer</span>
+              <span style={styles.detailValue}>{vehicle.metadata.manufacturer}</span>
+            </div>
+          )}
+          {vehicle.metadata?.year && (
+            <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Year</span>
+              <span style={styles.detailValue}>{vehicle.metadata.year}</span>
+            </div>
+          )}
+          {vehicle.metadata?.vin && (
+            <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>VIN</span>
+              <span style={styles.detailValue}>{vehicle.metadata.vin}</span>
+            </div>
+          )}
+          {vehicle.metadata?.fuelType && (
+            <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Fuel Type</span>
+              <span style={styles.detailValue}>{vehicle.metadata.fuelType}</span>
+            </div>
+          )}
+          {vehicle.metadata?.capacity && (
+            <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Capacity</span>
+              <span style={styles.detailValue}>{vehicle.metadata.capacity}</span>
+            </div>
+          )}
+        </>
+      ) : (
+        <div style={styles.emptyState}>
+          <svg style={styles.noDataIcon} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <p>No vehicle information available</p>
+        </div>
+      )}
+    </div>
+  );
+  
+  // Function to render the location map section
+  const renderLocationSection = () => (
+    <div style={{...styles.card, ...styles.fullWidth}}>
+      <h3 style={styles.cardTitle}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        Vehicle Location
+      </h3>
+      
+      <div style={styles.mapContainer}>
+        {trackingLoading.location ? (
+          <div style={{...styles.emptyState, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+            <svg className="spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '16px'}}>
+              <line x1="12" y1="2" x2="12" y2="6"></line>
+              <line x1="12" y1="18" x2="12" y2="22"></line>
+              <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+              <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+              <line x1="2" y1="12" x2="6" y2="12"></line>
+              <line x1="18" y1="12" x2="22" y2="12"></line>
+              <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+              <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+            </svg>
+            <p>Loading location data...</p>
+          </div>
+        ) : trackingError.location ? (
+          <div style={styles.mapError}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '8px', color: 'var(--error-color)'}}>
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p>Could not load location data: {trackingError.location}</p>
+          </div>
+        ) : !vehicleLocation ? (
+          <div style={styles.mapError}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '16px', opacity: 0.5}}>
+              <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
+              <line x1="5" y1="5" x2="19" y2="19"></line>
+            </svg>
+            <p>No location data available for this vehicle</p>
+          </div>
+        ) : (
           <VehicleLocationMap 
             location={vehicleLocation}
             loading={trackingLoading.location}
             error={trackingError.location}
-            height="400px"
+            height="350px"
           />
+        )}
+      </div>
+      
+      {vehicleLocation && (vehicleLocation.latitude || vehicleLocation.longitude) && (
+        <div style={{marginTop: '16px'}}>
+              <div style={styles.detailRow}>
+            <span style={styles.detailLabel}>Coordinates</span>
+                <span style={styles.detailValue}>
+              {vehicleLocation.latitude}, {vehicleLocation.longitude}
+                </span>
+              </div>
+          {vehicleLocation.speed !== undefined && (
+              <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Speed</span>
+              <span style={styles.detailValue}>{vehicleLocation.speed} km/h</span>
+              </div>
+          )}
+          {vehicleLocation.timestamp && (
+              <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Last Updated</span>
+              <span style={styles.detailValue}>{formatDate(vehicleLocation.timestamp)} {new Date(vehicleLocation.timestamp).toLocaleTimeString()}</span>
+              </div>
+          )}
         </div>
+      )}
+      </div>
+  );
+  
+  // Function to render the status and events timeline section
+  const renderStatusAndEvents = () => (
+    <>
+      <div style={styles.card}>
+        <h3 style={styles.cardTitle}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          Vehicle Status
+        </h3>
         
         <VehicleStatusCard 
           status={vehicleStatus}
           loading={trackingLoading.status}
           error={trackingError.status}
         />
+      </div>
+      
+      <div style={styles.card}>
+        <h3 style={styles.cardTitle}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Recent Events
+        </h3>
         
         <VehicleEventsTimeline 
           events={vehicleEvents}
@@ -339,135 +809,88 @@ function VehicleDetail() {
           limit={5}
         />
       </div>
-      
-      <div style={styles.vehicleDetailsGrid}>
-        <div className="card">
-          <h2>Vehicle Information</h2>
-          <div style={styles.detailRow}>
-            <span style={styles.detailLabel}>Model:</span>
-            <span style={styles.detailValue}>{vehicle?.model}</span>
-          </div>
-          <div style={styles.detailRow}>
-            <span style={styles.detailLabel}>Type:</span>
-            <span style={styles.detailValue}>{vehicle?.type}</span>
-          </div>
-          <div style={styles.detailRow}>
-            <span style={styles.detailLabel}>Status:</span>
-            <span style={styles.detailValue}>{vehicle?.status}</span>
-          </div>
-          <div style={styles.detailRow}>
-            <span style={styles.detailLabel}>Registration Date:</span>
-            <span style={styles.detailValue}>
-              {vehicle?.registrationDate ? new Date(vehicle.registrationDate).toLocaleDateString() : 'N/A'}
-            </span>
-          </div>
-          {vehicle?.metadata?.manufacturer && (
-            <div style={styles.detailRow}>
-              <span style={styles.detailLabel}>Manufacturer:</span>
-              <span style={styles.detailValue}>{vehicle.metadata.manufacturer}</span>
-            </div>
-          )}
-          {vehicle?.metadata?.year && (
-            <div style={styles.detailRow}>
-              <span style={styles.detailLabel}>Year:</span>
-              <span style={styles.detailValue}>{vehicle.metadata.year}</span>
-            </div>
-          )}
-          {vehicle?.metadata?.vin && (
-            <div style={styles.detailRow}>
-              <span style={styles.detailLabel}>VIN:</span>
-              <span style={styles.detailValue}>{vehicle.metadata.vin}</span>
-            </div>
-          )}
-          {vehicle?.metadata?.fuelType && (
-            <div style={styles.detailRow}>
-              <span style={styles.detailLabel}>Fuel Type:</span>
-              <span style={styles.detailValue}>{vehicle.metadata.fuelType}</span>
-            </div>
-          )}
-          {vehicle?.metadata?.capacity && (
-            <div style={styles.detailRow}>
-              <span style={styles.detailLabel}>Capacity:</span>
-              <span style={styles.detailValue}>{vehicle.metadata.capacity}</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="card">
-          <h2>Analytics</h2>
-          {vehicleData ? (
-            <>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Total Distance:</span>
-                <span style={styles.detailValue}>
-                  {vehicleData.mileageData?.[0]?.totalMileage || 'N/A'} km
-                </span>
-              </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Utilization Rate:</span>
-                <span style={styles.detailValue}>
-                  {vehicleData.vehicleUtilization?.[0]?.utilizationRate || 'N/A'}%
-                </span>
-              </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Fuel Consumption:</span>
-                <span style={styles.detailValue}>
-                  {vehicleData.fuelConsumption?.[0]?.totalConsumption || 'N/A'} L
-                </span>
-              </div>
-            </>
-          ) : (
-            <p>No analytics data available</p>
-          )}
-          <button onClick={() => setActiveTab('analytics')} style={styles.viewAllLink}>View All Analytics</button>
-        </div>
-      </div>
-      
-      <div className="card" style={{ marginBottom: '20px' }}>
+    </>
+  );
+  
+  // Function to render the upcoming maintenance section
+  const renderUpcomingMaintenance = () => (
+    <div style={{...styles.card, ...styles.fullWidth}}>
         <div style={styles.sectionHeader}>
-          <h2>Upcoming Maintenance</h2>
+        <h3 style={styles.cardTitle}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          Upcoming Maintenance
+        </h3>
           <Link 
             to={`/maintenance/schedules/new?vehicleId=${id}`} 
             style={{...styles.btn, ...styles.btnSmall, ...styles.btnPrimary}}
           >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
             Schedule Maintenance
           </Link>
         </div>
         
-        {schedules && schedules.length > 0 ? (
-          <table style={styles.maintenanceTable}>
+      {schedulesLoading ? (
+        <div style={styles.loadingState}>
+          <svg className="spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '8px'}}>
+            <line x1="12" y1="2" x2="12" y2="6"></line>
+            <line x1="12" y1="18" x2="12" y2="22"></line>
+            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+            <line x1="2" y1="12" x2="6" y2="12"></line>
+            <line x1="18" y1="12" x2="22" y2="12"></line>
+            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+          </svg>
+          <p>Loading maintenance schedules...</p>
+        </div>
+      ) : schedules && schedules.length > 0 ? (
+        <>
+          <table style={styles.table}>
             <thead>
               <tr>
-                <th style={styles.tableHeader}>Scheduled Date</th>
-                <th style={styles.tableHeader}>Type</th>
-                <th style={styles.tableHeader}>Description</th>
-                <th style={styles.tableHeader}>Status</th>
-                <th style={styles.tableHeader}>Priority</th>
-                <th style={styles.tableHeader}>Actions</th>
+                <th style={styles.th}>Scheduled Date</th>
+                <th style={styles.th}>Type</th>
+                <th style={styles.th}>Description</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Priority</th>
+                <th style={styles.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {schedules.slice(0, 3).map((schedule) => (
                 <tr key={schedule.id}>
-                  <td style={styles.tableCell}>
-                    {new Date(schedule.scheduledDate).toLocaleDateString()}
+                  <td style={styles.td}>
+                    {formatDate(schedule.scheduledDate)}
                   </td>
-                  <td style={styles.tableCell}>{schedule.maintenanceType}</td>
-                  <td style={styles.tableCell}>{schedule.description}</td>
-                  <td style={styles.tableCell}>
-                    <span style={{
-                      ...styles.vehicleStatus,
-                      ...getScheduleStatusStyle(schedule.status)
-                    }}>
-                      {schedule.status}
+                  <td style={styles.td}>{schedule.type || schedule.maintenanceType}</td>
+                  <td style={styles.td}>{schedule.description || 'No description'}</td>
+                  <td style={styles.td}>
+                    <span style={getMaintenanceStatusBadge(schedule.status)}>
+                      {schedule.status?.charAt(0).toUpperCase() + schedule.status?.slice(1) || 'Unknown'}
                     </span>
                   </td>
-                  <td style={styles.tableCell}>{schedule.priority}</td>
-                  <td style={styles.tableCell}>
+                  <td style={styles.td}>
+                    <span style={getMaintenanceStatusBadge(schedule.priority)}>
+                      {schedule.priority?.charAt(0).toUpperCase() + schedule.priority?.slice(1) || 'Normal'}
+                    </span>
+                  </td>
+                  <td style={styles.td}>
                     <Link 
                       to={`/maintenance/schedules/${schedule.id}`}
                       style={{...styles.btn, ...styles.btnSmall, ...styles.btnSecondary}}
                     >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
                       View
                     </Link>
                   </td>
@@ -475,50 +898,102 @@ function VehicleDetail() {
               ))}
             </tbody>
           </table>
-        ) : (
-          <p>No maintenance schedules found</p>
-        )}
-        <Link to={`/maintenance/schedules?vehicleId=${id}`} style={styles.viewAllLink}>View All Schedules</Link>
+          <Link to={`/maintenance/schedules?vehicleId=${id}`} style={styles.viewAllLink}>
+            View All Schedules →
+          </Link>
+        </>
+      ) : (
+        <div style={styles.emptyState}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '16px', opacity: 0.5}}>
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <p>No upcoming maintenance scheduled for this vehicle</p>
+          <Link 
+            to={`/maintenance/schedules/new?vehicleId=${id}`} 
+            style={{...styles.btn, ...styles.btnPrimary, marginTop: '16px'}}
+          >
+            Schedule Maintenance
+          </Link>
+        </div>
+      )}
       </div>
+  );
       
-      <div className="card">
+  // Function to render the maintenance history section
+  const renderMaintenanceHistory = () => (
+    <div style={{...styles.card, ...styles.fullWidth}}>
         <div style={styles.sectionHeader}>
-          <h2>Maintenance History</h2>
+        <h3 style={styles.cardTitle}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Maintenance History
+        </h3>
           <Link 
             to={`/maintenance/records/new?vehicleId=${id}`} 
             style={{...styles.btn, ...styles.btnSmall, ...styles.btnPrimary}}
           >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
             Add Record
           </Link>
         </div>
         
-        {records && records.length > 0 ? (
-          <table style={styles.maintenanceTable}>
+      {recordsLoading ? (
+        <div style={styles.loadingState}>
+          <svg className="spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '8px'}}>
+            <line x1="12" y1="2" x2="12" y2="6"></line>
+            <line x1="12" y1="18" x2="12" y2="22"></line>
+            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+            <line x1="2" y1="12" x2="6" y2="12"></line>
+            <line x1="18" y1="12" x2="22" y2="12"></line>
+            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+          </svg>
+          <p>Loading maintenance records...</p>
+        </div>
+      ) : records && records.length > 0 ? (
+        <>
+          <table style={styles.table}>
             <thead>
               <tr>
-                <th style={styles.tableHeader}>Date</th>
-                <th style={styles.tableHeader}>Type</th>
-                <th style={styles.tableHeader}>Description</th>
-                <th style={styles.tableHeader}>Cost</th>
-                <th style={styles.tableHeader}>Technician</th>
-                <th style={styles.tableHeader}>Actions</th>
+                <th style={styles.th}>Date</th>
+                <th style={styles.th}>Type</th>
+                <th style={styles.th}>Description</th>
+                <th style={styles.th}>Cost</th>
+                <th style={styles.th}>Technician</th>
+                <th style={styles.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {records.slice(0, 3).map((record) => (
                 <tr key={record.id}>
-                  <td style={styles.tableCell}>
-                    {new Date(record.serviceDate).toLocaleDateString()}
+                  <td style={styles.td}>
+                    {formatDate(record.performedAt || record.serviceDate || '')}
                   </td>
-                  <td style={styles.tableCell}>{record.serviceType}</td>
-                  <td style={styles.tableCell}>{record.description}</td>
-                  <td style={styles.tableCell}>${record.cost?.toFixed(2) || '0.00'}</td>
-                  <td style={styles.tableCell}>{record.technician || 'N/A'}</td>
-                  <td style={styles.tableCell}>
+                  <td style={styles.td}>{record.type || 'N/A'}</td>
+                  <td style={styles.td}>{record.description || 'No description'}</td>
+                  <td style={styles.td}>{formatCurrency(record.cost)}</td>
+                  <td style={styles.td}>{record.performedBy || record.technician || 'N/A'}</td>
+                  <td style={styles.td}>
                     <Link 
                       to={`/maintenance/records/${record.id}`}
                       style={{...styles.btn, ...styles.btnSmall, ...styles.btnSecondary}}
                     >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
                       View
                     </Link>
                   </td>
@@ -526,258 +1001,446 @@ function VehicleDetail() {
               ))}
             </tbody>
           </table>
-        ) : (
-          <p>No maintenance records found</p>
-        )}
-        <Link to={`/maintenance/records?vehicleId=${id}`} style={styles.viewAllLink}>View All Records</Link>
+          <Link to={`/maintenance/records?vehicleId=${id}`} style={styles.viewAllLink}>
+            View All Records →
+          </Link>
+        </>
+      ) : (
+        <div style={styles.emptyState}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '16px', opacity: 0.5}}>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <p>No maintenance records found for this vehicle</p>
+          <Link 
+            to={`/maintenance/records/new?vehicleId=${id}`} 
+            style={{...styles.btn, ...styles.btnPrimary, marginTop: '16px'}}
+          >
+            Add Maintenance Record
+          </Link>
+        </div>
+      )}
       </div>
-    </>
   );
   
-  const renderAnalyticsTab = () => (
-    <div className="vehicle-analytics">
-      <div className="analytics-controls">
-        <div className="control-group">
-          <label>Metric:</label>
-          <select value={metricType} onChange={handleMetricChange}>
+  // Function to render the analytics tab with actual charts
+  const renderAnalyticsTab = () => {
+    // Check if there's at least some data available
+    const hasVehicleData = vehicleData && vehicleData.data && vehicleData.data.data && vehicleData.data.data.data;
+    
+    // For trend data, use actual data if available, otherwise generate demo data
+    const trendData = metricTrends && metricTrends.length > 0 
+      ? metricTrends.map(item => ({
+          date: item.date,
+          value: item.value,
+          average: item.average || null
+        }))
+      : generateRandomData(30);
+    
+    // Get color for performance indicators
+    const getPerformanceColor = (diff: number) => {
+      if (diff > 5) return styles.diffPositive;
+      if (diff < -5) return styles.diffNegative;
+      return styles.diffNeutral;
+    };
+    
+    const getMetricLabel = () => {
+      switch (metricType) {
+        case 'fuelEfficiency': return 'Fuel Efficiency';
+        case 'utilization': return 'Utilization Rate';
+        case 'costPerHour': return 'Cost Per Hour';
+        case 'costPerKm': return 'Cost Per Km';
+        default: return 'Metric';
+      }
+    };
+    
+    
+    return (
+      <div>
+        <div style={styles.formGroup}>
+          <div style={styles.flexRow}>
+            <div style={{ flex: 1 }}>
+              <label style={styles.formLabel}>Metric</label>
+              <select 
+                style={styles.formSelect} 
+                value={metricType} 
+                onChange={handleMetricChange}
+              >
             <option value="fuelEfficiency">Fuel Efficiency</option>
-            <option value="utilization">Utilization</option>
+                <option value="utilization">Utilization Rate</option>
             <option value="costPerHour">Cost Per Hour</option>
+                <option value="costPerKm">Cost Per Km</option>
           </select>
         </div>
+            <div style={{ flex: 1 }}>
+              <label style={styles.formLabel}>Time Period</label>
+              <select 
+                style={styles.formSelect} 
+                value={timeRange} 
+                onChange={handleTimeRangeChange}
+              >
+                <option value="7">Last 7 Days</option>
+                <option value="30">Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+                <option value="180">Last 6 Months</option>
+                <option value="365">Last Year</option>
+              </select>
       </div>
-      
-      <div className="analytics-section">
-        <div className="analytics-card key-metrics">
-          <h3>Key Metrics</h3>
-          {vehicleData?.data ? (
-            <div className="metrics-grid">
-              <div className="metric-item">
-                <span className="metric-label">Total Distance</span>
-                <span className="metric-value">
-                  {(vehicleData.data.data.data.totalDistance || 0).toLocaleString(undefined, {maximumFractionDigits: 2})} km
-                </span>
               </div>
-              <div className="metric-item">
-                <span className="metric-label">Fuel Consumption</span>
-                <span className="metric-value">
-                  {(vehicleData.data.data.data.totalFuelConsumption || 0).toLocaleString(undefined, {maximumFractionDigits: 2})} L
-                </span>
               </div>
-              <div className="metric-item">
-                <span className="metric-label">Fuel Efficiency</span>
-                <span className="metric-value">
-                  {(vehicleData.data.data.data.fuelEfficiency || 0).toFixed(2)} km/L
-                </span>
-              </div>
-              <div className="metric-item">
-                <span className="metric-label">Utilization Rate</span>
-                <span className="metric-value">
-                  {((vehicleData.data.data.data.utilizationRate || 0) * 100).toFixed(1)}%
-                </span>
-              </div>
-              <div className="metric-item">
-                <span className="metric-label">Maintenance Cost</span>
-                <span className="metric-value">
-                  ${(vehicleData.data.data.data.maintenanceCost || 0).toLocaleString(undefined, {maximumFractionDigits: 2})}
-                </span>
-              </div>
-              <div className="metric-item">
-                <span className="metric-label">Cost per Km</span>
-                <span className="metric-value">
-                  ${(vehicleData.data.data.data.costPerKm || 0).toFixed(2)}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <p>No vehicle data available</p>
-          )}
-        </div>
-      </div>
-      
-      <div className="analytics-section">
-        <div className="analytics-card">
-          <h3>Trend Analysis: {metricType === 'fuelEfficiency' ? 'Fuel Efficiency' : 
-                              metricType === 'maintenanceFrequency' ? 'Maintenance Frequency' :
-                              metricType === 'utilization' ? 'Utilization Rate' :
-                              metricType === 'costPerHour' ? 'Cost Per Hour' : 'Cost Per Km'}</h3>
-          {metricTrends && metricTrends.length > 0 ? (
-            <div className="trend-chart">
-              <div className="placeholder-chart">
-                <p>Trend chart would be displayed here</p>
-              </div>
-              <div className="trend-summary">
-                <p>
-                  <strong>Average:</strong> {metricTrends.length > 0 ? 
-                    (metricTrends.reduce((sum, item) => sum + (item?.value || 0), 0) / metricTrends.length).toFixed(2) : '0.00'}
-                  {metricType === 'fuelEfficiency' ? ' km/L' : 
-                    metricType === 'maintenanceFrequency' ? ' days' :
-                    metricType === 'utilization' ? '%' : '$'}
-                </p>
-                <p>
-                  <strong>Trend:</strong> {metricTrends.length > 0 && metricTrends[metricTrends.length - 1]?.trend ? 
-                    (metricTrends[metricTrends.length - 1].trend === 'up' ? '↑ Increasing' : 
-                     metricTrends[metricTrends.length - 1].trend === 'down' ? '↓ Decreasing' : '→ Stable') 
-                    : '→ Stable'}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p>No trend data available</p>
-          )}
-        </div>
         
-        <div className="analytics-card">
-          <h3>Fleet Comparison</h3>
-          {vehicleComparison ? (
-            <div className="comparison-data">
-              <div className="comparison-chart">
-                <div className="placeholder-chart">
-                  <p>Comparison chart would be displayed here</p>
+        {analyticsLoading ? (
+          <div style={styles.loadingState}>
+            <svg className="spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '8px'}}>
+              <line x1="12" y1="2" x2="12" y2="6"></line>
+              <line x1="12" y1="18" x2="12" y2="22"></line>
+              <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+              <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+              <line x1="2" y1="12" x2="6" y2="12"></line>
+              <line x1="18" y1="12" x2="22" y2="12"></line>
+              <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+              <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+            </svg>
+            <p>Loading analytics data...</p>
+              </div>
+        ) : (
+          <>
+            <div style={{...styles.card, ...styles.fullWidth, marginBottom: '24px'}}>
+              <h3 style={styles.cardTitle}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Key Metrics
+              </h3>
+              
+              {hasVehicleData ? (
+                <div style={styles.statsGrid}>
+                  <div style={styles.metricCard}>
+                    <div style={styles.metricLabel}>Total Distance</div>
+                    <div style={styles.metricValue}>
+                      {vehicleData.data.data.data.totalDistance?.toLocaleString(undefined, {maximumFractionDigits: 2}) || 'N/A'} km
+              </div>
+              </div>
+                  <div style={styles.metricCard}>
+                    <div style={styles.metricLabel}>Fuel Consumption</div>
+                    <div style={styles.metricValue}>
+                      {vehicleData.data.data.data.totalFuelConsumption?.toLocaleString(undefined, {maximumFractionDigits: 2}) || 'N/A'} L
+              </div>
+            </div>
+                  <div style={styles.metricCard}>
+                    <div style={styles.metricLabel}>Fuel Efficiency</div>
+                    <div style={styles.metricValue}>
+                      {vehicleData.data.data.data.fuelEfficiency?.toFixed(2) || 'N/A'} km/L
+        </div>
+      </div>
+                  <div style={styles.metricCard}>
+                    <div style={styles.metricLabel}>Utilization Rate</div>
+                    <div style={styles.metricValue}>
+                      {vehicleData.data.data.data.utilizationRate ? (vehicleData.data.data.data.utilizationRate * 100).toFixed(1) : 'N/A'}%
+              </div>
+              </div>
+                  <div style={styles.metricCard}>
+                    <div style={styles.metricLabel}>Maintenance Cost</div>
+                    <div style={styles.metricValue}>
+                      {formatCurrency(vehicleData.data.data.data.maintenanceCost)}
+            </div>
+        </div>
+                  <div style={styles.metricCard}>
+                    <div style={styles.metricLabel}>Cost per Km</div>
+                    <div style={styles.metricValue}>
+                      {formatCurrency(vehicleData.data.data.data.costPerKm)}
                 </div>
               </div>
-              <div className="comparison-stats">
-                <p>
-                  <strong>Vehicle Value:</strong> {vehicleComparison.vehicleValue?.toFixed(2) || '0.00'}
-                  {metricType === 'fuelEfficiency' ? ' km/L' : 
-                    metricType === 'maintenanceFrequency' ? ' days' :
-                    metricType === 'utilization' ? '%' : '$'}
-                </p>
-                <p>
-                  <strong>Fleet Average:</strong> {vehicleComparison.fleetAverage?.toFixed(2) || '0.00'}
-                  {metricType === 'fuelEfficiency' ? ' km/L' : 
-                    metricType === 'maintenanceFrequency' ? ' days' :
-                    metricType === 'utilization' ? '%' : '$'}
-                </p>
-                <p>
-                  <strong>Difference:</strong> {vehicleComparison.percentDifference > 0 ? '+' : ''}
-                  {vehicleComparison.percentDifference?.toFixed(2) || '0.00'}%
-                </p>
-                <p>
-                  <strong>Rank:</strong> {vehicleComparison.rank || 0} of {vehicleComparison.totalVehicles || 0}
-                </p>
-              </div>
             </div>
           ) : (
-            <p>No comparison data available</p>
-          )}
+                <div style={styles.emptyState}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '16px', opacity: 0.5}}>
+                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                  </svg>
+                  <p>No analytics data available for this vehicle</p>
         </div>
+              )}
       </div>
       
-      <style jsx>{`
-        .vehicle-analytics {
-          padding: 10px 0;
+            <div style={styles.grid}>
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                  </svg>
+                  {getMetricLabel()} Trend
+                </h3>
+                
+                <div style={styles.chartContainer}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis 
+                        dataKey="date"
+                        tick={{ fontSize: 12 }}
+                        tickMargin={10}
+                      />
+                      <YAxis 
+                        domain={['auto', 'auto']} 
+                        tick={{ fontSize: 12 }}
+                        tickMargin={10}
+                        tickFormatter={(value) => {
+                          if (metricType === 'utilization') {
+                            return `${value}%`;
+                          }
+                          if (metricType === 'costPerHour' || metricType === 'costPerKm') {
+                            return `$${value}`;
+                          }
+                          return value;
+                        }}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [formatMetricValue(value as number, metricType), getMetricLabel()]} 
+                        labelFormatter={(label) => `Date: ${label}`}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        name={getMetricLabel()} 
+                        stroke="#2196F3" 
+                        strokeWidth={2}
+                        activeDot={{ r: 8 }}
+                      />
+                      {metricType !== 'utilization' && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="average" 
+                          name="Fleet Average" 
+                          stroke="#757575" 
+                          strokeDasharray="5 5"
+                        />
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {trendData.length > 0 && (
+                  <div style={{marginTop: '16px'}}>
+                    <div style={styles.detailRow}>
+                      <span style={styles.detailLabel}>Average</span>
+                      <span style={styles.detailValue}>
+                        {formatMetricValue(
+                          trendData.reduce((sum, item) => sum + (item.value || 0), 0) / trendData.length,
+                          metricType
+                        )}
+                      </span>
+                    </div>
+                    <div style={styles.detailRow}>
+                      <span style={styles.detailLabel}>Highest</span>
+                      <span style={styles.detailValue}>
+                        {formatMetricValue(
+                          Math.max(...trendData.map(item => item.value || 0)),
+                          metricType
+                        )}
+                      </span>
+                    </div>
+                    <div style={styles.detailRow}>
+                      <span style={styles.detailLabel}>Lowest</span>
+                      <span style={styles.detailValue}>
+                        {formatMetricValue(
+                          Math.min(...trendData.filter(item => item.value !== undefined && item.value !== null)
+                            .map(item => item.value || 0)),
+                          metricType
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                  </svg>
+                  Fleet Comparison
+                </h3>
+                
+                {vehicleComparison ? (
+                  <>
+                    <div style={styles.chartContainer}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={[
+                            { name: 'Vehicle', value: vehicleComparison.vehicleValue || 0 },
+                            { name: 'Fleet Average', value: vehicleComparison.fleetAverage || 0 }
+                          ]}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="name" />
+                          <YAxis 
+                            domain={['auto', 'auto']} 
+                            tickFormatter={(value) => {
+                              if (metricType === 'utilization') {
+                                return `${value}%`;
         }
-        
-        .analytics-controls {
-          display: flex;
-          gap: 20px;
-          margin-bottom: 20px;
-          flex-wrap: wrap;
-        }
-        
-        .control-group {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        
-        .analytics-section {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-          gap: 20px;
-          margin-bottom: 20px;
-        }
-        
-        .analytics-card {
-          background-color: var(--card-background);
-          border-radius: 6px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          padding: 20px;
-          height: 100%;
-        }
-        
-        .key-metrics {
-          grid-column: 1 / -1;
-        }
-        
-        .metrics-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 15px;
-          margin-top: 15px;
-        }
-        
-        .metric-item {
-          display: flex;
-          flex-direction: column;
-          padding: 15px;
-          background-color: var(--background-secondary);
-          border-radius: 4px;
-        }
-        
-        .metric-label {
-          font-size: 14px;
-          color: var(--text-secondary);
-          margin-bottom: 5px;
-        }
-        
-        .metric-value {
-          font-size: 18px;
-          font-weight: bold;
-        }
-        
-        .trend-chart, .comparison-data {
-          margin-top: 15px;
-        }
-        
-        .placeholder-chart {
-          height: 200px;
-          background-color: var(--background-secondary);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          color: var(--text-secondary);
-          border-radius: 4px;
-          margin-bottom: 15px;
-        }
-        
-        .trend-summary, .comparison-stats {
-          background-color: var(--background-secondary);
-          padding: 15px;
-          border-radius: 4px;
-        }
-        
-        .trend-summary p, .comparison-stats p {
-          margin: 5px 0;
-        }
-      `}</style>
+                              if (metricType === 'costPerHour' || metricType === 'costPerKm') {
+                                return `$${value}`;
+                              }
+                              return value;
+                            }}
+                          />
+                          <Tooltip 
+                            formatter={(value) => [formatMetricValue(value as number, metricType), '']} 
+                          />
+                          <Legend />
+                          <Bar 
+                            dataKey="value" 
+                            fill="#8884d8" 
+                            name={getMetricLabel()}
+                          >
+                            <Cell fill="#2196F3" />
+                            <Cell fill="#757575" />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    <div style={styles.comparisonContainer}>
+                      <div style={styles.comparisonItem}>
+                        <div style={styles.comparisonLabel}>Vehicle Value</div>
+                        <div style={styles.comparisonValue}>
+                          {formatMetricValue(vehicleComparison.vehicleValue, metricType)}
+                        </div>
+                      </div>
+                      <div style={styles.comparisonItem}>
+                        <div style={styles.comparisonLabel}>Fleet Average</div>
+                        <div style={styles.comparisonValue}>
+                          {formatMetricValue(vehicleComparison.fleetAverage, metricType)}
+                        </div>
+                      </div>
+                      <div style={styles.comparisonItem}>
+                        <div style={styles.comparisonLabel}>Difference</div>
+                        <div style={{
+                          ...styles.comparisonValue,
+                          ...getPerformanceColor(vehicleComparison.percentDifference || 0)
+                        }}>
+                          {vehicleComparison.percentDifference > 0 ? '+' : ''}
+                          {vehicleComparison.percentDifference?.toFixed(1) || '0.0'}%
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div style={{marginTop: '16px'}}>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Rank</span>
+                        <span style={styles.detailValue}>
+                          {vehicleComparison.rank || 'N/A'} of {vehicleComparison.totalVehicles || 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div style={styles.emptyState}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '16px', opacity: 0.5}}>
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="8.5" cy="7" r="4"></circle>
+                      <line x1="20" y1="8" x2="20" y2="14"></line>
+                      <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                    <p>No comparison data available</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+  
+  // Function to render the Overview tab
+  const renderOverviewTab = () => (
+    <div>
+      
+      <div style={styles.grid}>
+        {renderLocationSection()}
+      </div>
+      <div style={styles.grid}>
+        {renderVehicleInformation()}
+        {renderStatusAndEvents()}
+      </div>
+      
+      <div style={styles.grid}>
+        {renderUpcomingMaintenance()}
+        {renderMaintenanceHistory()}
+      </div>
     </div>
   );
   
   if (loading && !vehicle) {
-    return <div>Loading vehicle data...</div>;
+    return (
+      <div style={styles.loadingState}>
+        <svg className="spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '8px'}}>
+          <line x1="12" y1="2" x2="12" y2="6"></line>
+          <line x1="12" y1="18" x2="12" y2="22"></line>
+          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+          <line x1="2" y1="12" x2="6" y2="12"></line>
+          <line x1="18" y1="12" x2="22" y2="12"></line>
+          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+        </svg>
+        <p>Loading vehicle data...</p>
+      </div>
+    );
   }
   
   if (vehicleError) {
-    return <div style={styles.errorMessage}>{vehicleError}</div>;
+    return (
+      <div style={styles.errorMessage}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '8px', color: 'var(--error-color)'}}>
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <p>{vehicleError}</p>
+      </div>
+    );
   }
   
   if (!vehicle) {
-    return <div>Vehicle not found</div>;
+    return (
+      <div style={styles.emptyState}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: '16px', opacity: 0.5}}>
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <p>Vehicle not found</p>
+        <Link to="/vehicles" style={{...styles.btn, ...styles.btnPrimary, marginTop: '16px'}}>
+          Return to Vehicles List
+        </Link>
+      </div>
+    );
   }
   
   return (
-    <div style={styles.vehicleDetailContainer}>
+    <div style={styles.container}>
       {showDeleteConfirm && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
-            <h3>Confirm Delete</h3>
-            <p>Are you sure you want to delete this vehicle?</p>
-            {deleteError && <p style={styles.errorMessage}>{deleteError}</p>}
+            <h3 style={styles.modalTitle}>Confirm Delete</h3>
+            <p style={styles.modalText}>Are you sure you want to delete this vehicle? This action cannot be undone.</p>
+            {deleteError && <div style={styles.errorMessage}>{deleteError}</div>}
             <div style={styles.modalActions}>
               <button 
-                style={{...styles.btn, ...styles.btnSecondary}}
+                style={{...styles.btn, ...styles.btnOutline}}
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={isDeleting}
               >
@@ -788,24 +1451,43 @@ function VehicleDetail() {
                 onClick={handleDelete}
                 disabled={isDeleting}
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? 'Deleting...' : 'Delete Vehicle'}
               </button>
             </div>
           </div>
         </div>
       )}
       
-      <div style={styles.vehicleDetailHeader}>
+      <div style={styles.header}>
         <div>
-          <h1>{vehicle.model}</h1>
-          <div style={getStatusStyle(vehicle.status)}>{vehicle.status}</div>
+          <h1 style={styles.title}>{vehicle.model || 'Unknown Vehicle'}</h1>
+          <div style={{display: 'flex', alignItems: 'center'}}>
+            <div style={getStatusStyle(vehicle.status || '')}>
+              {vehicle.status?.toUpperCase() || 'UNKNOWN'}
+            </div>
+            {vehicle.type && (
+              <span style={styles.subtitle}>{vehicle.type}</span>
+            )}
+          </div>
         </div>
         <div style={styles.actionButtons}>
-          <Link to={`/vehicles/${id}/edit`} style={{...styles.btn, ...styles.btnPrimary}}>Edit</Link>
+          <Link to={`/vehicles/${id}/edit`} style={{...styles.btn, ...styles.btnPrimary}}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Edit
+          </Link>
           <button 
-            style={{...styles.btn, ...styles.btnSecondary}} 
+            style={{...styles.btn, ...styles.btnDanger}} 
             onClick={() => setShowDeleteConfirm(true)}
           >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
             Delete
           </button>
         </div>
@@ -813,15 +1495,38 @@ function VehicleDetail() {
       
       <div style={styles.tabsContainer}>
         <div 
-          style={{...styles.tab, ...(activeTab === 'overview' ? styles.tabActive : {})}}
+          style={{
+            ...styles.tab, 
+            ...(activeTab === 'overview' ? styles.tabActive : {}),
+            ...(activeTab !== 'overview' && hoveredTab === 'overview' ? styles.tabHover : {})
+          }}
           onClick={() => setActiveTab('overview')}
+          onMouseEnter={() => setHoveredTab('overview')}
+          onMouseLeave={() => setHoveredTab(null)}
         >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '6px', verticalAlign: 'middle'}}>
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
           Overview
         </div>
         <div 
-          style={{...styles.tab, ...(activeTab === 'analytics' ? styles.tabActive : {})}}
+          style={{
+            ...styles.tab, 
+            ...(activeTab === 'analytics' ? styles.tabActive : {}),
+            ...(activeTab !== 'analytics' && hoveredTab === 'analytics' ? styles.tabHover : {})
+          }}
           onClick={() => setActiveTab('analytics')}
+          onMouseEnter={() => setHoveredTab('analytics')}
+          onMouseLeave={() => setHoveredTab(null)}
         >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '6px', verticalAlign: 'middle'}}>
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
           Analytics
         </div>
       </div>

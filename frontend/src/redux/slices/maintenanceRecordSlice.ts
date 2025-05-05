@@ -27,7 +27,7 @@ const initialState: MaintenanceRecordState = {
 // Async thunks
 export const fetchMaintenanceRecords = createAsyncThunk(
   'maintenanceRecords/fetchAll',
-  async (params?: any, { rejectWithValue }) => {
+  async (params: any, { rejectWithValue }) => {
     try {
       const response = await maintenanceService.getRecords(params);
       return response.data as MaintenanceListResponse<MaintenanceRecord>;

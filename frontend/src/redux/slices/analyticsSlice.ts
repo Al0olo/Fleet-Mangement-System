@@ -51,6 +51,8 @@ export interface MetricTrend {
   value: number;
   change: number;
   trend: 'up' | 'down' | 'stable';
+  date?: string;
+  average?: number;
 }
 
 export interface VehicleComparison {

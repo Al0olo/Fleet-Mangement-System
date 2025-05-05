@@ -91,7 +91,7 @@ export const fetchOverdueSchedules = createAsyncThunk(
 
 export const updateOverdueSchedules = createAsyncThunk(
   'maintenanceSchedules/updateOverdue',
-  async (params?: any, { rejectWithValue }) => {
+  async (params: any, { rejectWithValue }) => {
     try {
       const response = await maintenanceService.updateOverdueSchedules();
       return response.data;

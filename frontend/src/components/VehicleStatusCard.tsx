@@ -48,15 +48,7 @@ const VehicleStatusCard: React.FC<VehicleStatusCardProps> = ({
     );
   }
 
-  if (error) {
-    return (
-      <div className="card" style={{ padding: '15px', backgroundColor: '#fff0f0' }}>
-        <div style={{ color: '#d32f2f' }}>Error loading status: {error}</div>
-      </div>
-    );
-  }
-
-  if (!status) {
+  if (!status || error) {
     return (
       <div className="card" style={{ padding: '15px' }}>
         <div style={{ textAlign: 'center' }}>No status data available</div>
