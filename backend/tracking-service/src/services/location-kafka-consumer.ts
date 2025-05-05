@@ -59,9 +59,6 @@ export class LocationKafkaConsumer extends KafkaConsumerService {
       } else {
         this.logger.error('Unknown error processing location message');
       }
-      
-      // We don't rethrow the error to prevent the consumer from crashing
-      // Instead, we'll continue processing the next message
     }
   }
 } 

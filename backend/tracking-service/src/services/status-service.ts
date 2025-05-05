@@ -183,7 +183,6 @@ export class StatusService {
       if (error instanceof Error) {
         this.logger.error(`Error updating Redis cache: ${error.message}`);
       }
-      // Don't rethrow since this is a background operation
     }
   }
 
@@ -194,13 +193,8 @@ export class StatusService {
    */
   private async checkMaintenanceNeeds(status: IVehicleStatus): Promise<void> {
     try {
-      // Implement maintenance check logic
-      // This could check fuel levels, odometer readings, etc.
-      // For example, check if fuel level is below 15%
       if (status.fuelLevel !== undefined && status.fuelLevel < 15) {
         this.logger.info(`Vehicle ${status.vehicleId} has low fuel: ${status.fuelLevel}%`);
-        // This could trigger an event or notification
-        // We'll leave the implementation of those details for another time
       }
       
       // Check battery level
@@ -209,8 +203,6 @@ export class StatusService {
       }
       
       // Check odometer for maintenance schedule
-      // This is just a simple example - in a real system you would have
-      // maintenance schedules and would compare against those
       if (status.odometer !== undefined && status.odometer % 10000 < 500) {
         // Vehicle is within 500km of a 10000km maintenance interval
         this.logger.info(`Vehicle ${status.vehicleId} is due for maintenance at ${status.odometer}km`);
@@ -219,7 +211,6 @@ export class StatusService {
       if (error instanceof Error) {
         this.logger.error(`Error checking maintenance needs: ${error.message}`);
       }
-      // Don't rethrow since this is a background operation
     }
   }
 } 

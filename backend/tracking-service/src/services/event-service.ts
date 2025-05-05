@@ -170,7 +170,6 @@ export class EventService {
       if (error instanceof Error) {
         this.logger.error(`Error updating Redis with event: ${error.message}`);
       }
-      // Don't rethrow since this is a background operation
     }
   }
 
@@ -203,14 +202,11 @@ export class EventService {
             );
           }
           break;
-          
-        // Add other event type handling as needed
       }
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error processing ${event.eventType} event: ${error.message}`);
       }
-      // Don't rethrow since this is a background operation
     }
   }
 
@@ -254,7 +250,6 @@ export class EventService {
       } else {
         this.logger.error('Unknown error notifying maintenance service');
       }
-      // Don't rethrow since this is a background operation
     }
   }
 } 
