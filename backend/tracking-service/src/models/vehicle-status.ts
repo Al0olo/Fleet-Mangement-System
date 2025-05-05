@@ -1,53 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     VehicleStatus:
- *       type: object
- *       required:
- *         - vehicleId
- *         - timestamp
- *         - status
- *       properties:
- *         vehicleId:
- *           type: string
- *           description: The unique identifier of the vehicle
- *         timestamp:
- *           type: string
- *           format: date-time
- *           description: The date and time when the status was recorded
- *         status:
- *           type: string
- *           description: Current status of the vehicle
- *           enum: [ACTIVE, IDLE, MAINTENANCE, OUT_OF_SERVICE]
- *           example: ACTIVE
- *         fuelLevel:
- *           type: number
- *           description: Current fuel level percentage
- *           minimum: 0
- *           maximum: 100
- *           example: 75
- *         batteryLevel:
- *           type: number
- *           description: Current battery level percentage
- *           minimum: 0
- *           maximum: 100
- *           example: 85
- *         engineStatus:
- *           type: string
- *           description: Engine status
- *           enum: [ON, OFF, ERROR]
- *           example: ON
- *         odometer:
- *           type: number
- *           description: Current odometer reading in kilometers
- *           example: 12500
- *         metadata:
- *           type: object
- *           description: Additional metadata about the vehicle status
- */
 
 // Define the interface for vehicle status
 export interface IVehicleStatus extends Document {

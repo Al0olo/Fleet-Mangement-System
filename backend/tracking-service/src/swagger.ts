@@ -1,3 +1,4 @@
+import path from 'path';
 import swaggerJsdoc from 'swagger-jsdoc';
 
 const options = {
@@ -34,7 +35,12 @@ const options = {
       },
     ],
   },
-  apis: ['./src/routes/*.ts', './src/models/*.ts'],
+  apis: [
+    path.resolve(__dirname, './routes/*.ts'),
+    path.resolve(__dirname, './models/*.ts'),
+    path.resolve(__dirname, '../dist/routes/*.js'),
+    path.resolve(__dirname, '../dist/models/*.js')
+  ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
