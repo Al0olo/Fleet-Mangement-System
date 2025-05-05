@@ -175,7 +175,7 @@ export function createServer(customLogger?: winston.Logger) {
   });
 
   // Set up Swagger UI
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  app.use(['/api-docs', '/api/docs'], swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
     customSiteTitle: "Analytics Service API Documentation",
