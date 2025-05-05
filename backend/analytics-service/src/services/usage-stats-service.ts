@@ -1,6 +1,12 @@
 import { Logger } from 'winston';
 import mongoose from 'mongoose';
 import UsageStats, { IUsageStats } from '../models/usage-stats';
+import { 
+  buildDateRangeQuery, 
+  ensureObjectId, 
+  buildVehicleStatsAggregation, 
+  buildTopVehiclesAggregation 
+} from '../util/metrics-helpers';
 
 class UsageStatsService {
   private logger: Logger;
@@ -18,18 +24,17 @@ class UsageStatsService {
   ): Promise<IUsageStats[]> {
     try {
       // Build query with optional date range
-      const query: Record<string, any> = { vehicleId: new mongoose.Types.ObjectId(vehicleId) };
+      const query: Record<string, any> = { 
+        vehicleId: new mongoose.Types.ObjectId(vehicleId) 
+      };
       
-      if (startDate || endDate) {
-        query.startDate = {};
-        
-        if (startDate) {
-          query.startDate.$gte = startDate;
-        }
-        
-        if (endDate) {
-          query.endDate = { $lte: endDate };
-        }
+      // Use helper function to build date range queries
+      if (startDate) {
+        Object.assign(query, buildDateRangeQuery('startDate', startDate, undefined));
+      }
+      
+      if (endDate) {
+        Object.assign(query, { endDate: { $lte: endDate } });
       }
       
       const stats = await UsageStats.find(query)
@@ -68,10 +73,8 @@ class UsageStatsService {
     idleTime?: number;
   }): Promise<IUsageStats> {
     try {
-      // Convert string ID to ObjectId if needed
-      const vehicleObjectId = typeof statsData.vehicleId === 'string' 
-        ? new mongoose.Types.ObjectId(statsData.vehicleId) 
-        : statsData.vehicleId;
+      // Use helper function to ensure vehicleId is an ObjectId
+      const vehicleObjectId = ensureObjectId(statsData.vehicleId);
       
       // Try to find an existing record for this vehicle and time period
       const stats = await UsageStats.findOne({
@@ -132,26 +135,9 @@ class UsageStatsService {
     endDate: Date
   ): Promise<Record<string, any>> {
     try {
-      const aggregateStats = await UsageStats.aggregate([
-        {
-          $match: {
-            vehicleId: new mongoose.Types.ObjectId(vehicleId),
-            startDate: { $gte: startDate },
-            endDate: { $lte: endDate }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            totalHours: { $sum: '$hoursOperated' },
-            totalDistance: { $sum: '$distanceTraveled' },
-            totalFuel: { $sum: '$fuelConsumed' },
-            totalIdle: { $sum: '$idleTime' },
-            recordCount: { $sum: 1 },
-            avgEfficiency: { $avg: '$efficiency' }
-          }
-        }
-      ]);
+      // Use helper function to build aggregation pipeline
+      const aggregationPipeline = buildVehicleStatsAggregation(vehicleId, startDate, endDate);
+      const aggregateStats = await UsageStats.aggregate(aggregationPipeline);
       
       if (aggregateStats.length === 0) {
         return {
@@ -177,24 +163,9 @@ class UsageStatsService {
     endDate: Date
   ): Promise<Record<string, any>> {
     try {
-      const aggregateStats = await UsageStats.aggregate([
-        {
-          $match: {
-            startDate: { $gte: startDate },
-            endDate: { $lte: endDate }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            totalHours: { $sum: '$hoursOperated' },
-            totalDistance: { $sum: '$distanceTraveled' },
-            totalFuel: { $sum: '$fuelConsumed' },
-            totalIdle: { $sum: '$idleTime' },
-            avgEfficiency: { $avg: '$efficiency' }
-          }
-        }
-      ]);
+      // Use helper function to build aggregation pipeline (without vehicleId)
+      const aggregationPipeline = buildVehicleStatsAggregation(undefined, startDate, endDate);
+      const aggregateStats = await UsageStats.aggregate(aggregationPipeline);
       
       // Get count of unique vehicles
       const uniqueVehicles = await UsageStats.aggregate([
@@ -243,28 +214,9 @@ class UsageStatsService {
     limit: number = 5
   ): Promise<any[]> {
     try {
-      const sortDirection = metric === 'efficiency' ? -1 : -1; // Higher is better for all metrics
-      
-      const topVehicles = await UsageStats.aggregate([
-        {
-          $match: {
-            startDate: { $gte: startDate },
-            endDate: { $lte: endDate }
-          }
-        },
-        {
-          $group: {
-            _id: '$vehicleId',
-            total: { $sum: `$${metric}` }
-          }
-        },
-        {
-          $sort: { total: sortDirection }
-        },
-        {
-          $limit: limit
-        }
-      ]);
+      // Use helper function to build top vehicles aggregation
+      const aggregationPipeline = buildTopVehiclesAggregation(metric, startDate, endDate, limit);
+      const topVehicles = await UsageStats.aggregate(aggregationPipeline);
       
       return topVehicles;
     } catch (error) {
