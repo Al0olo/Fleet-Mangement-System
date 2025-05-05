@@ -61,8 +61,26 @@ export const getVehicleByIdController = async (req: Request, res: Response): Pro
  */
 export const createVehicleController = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { type } = req.body;
-    const vehicle = await createSimulatedVehicle(config.simulation.defaultRegion, type);
+    // Extract all vehicle data from the request body
+    const { vehicleId, type, vin, name, location, speed, heading, fuelLevel, odometer, engineHours, active } = req.body;
+    
+    // Create vehicle using the data from request
+    const vehicle = await createSimulatedVehicle(
+      config.simulation.defaultRegion, 
+      type,
+      { 
+        vehicleId, 
+        vin, 
+        name,
+        location,
+        speed,
+        heading,
+        fuelLevel,
+        odometer,
+        engineHours,
+        active
+      }
+    );
     
     res.status(201).json({
       success: true,

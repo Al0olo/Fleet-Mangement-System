@@ -57,6 +57,74 @@ class UsageStatsService {
     }
   }
 
+  // Record or update usage stats for a specific vehicle and time period
+  public async recordOrUpdateUsageStats(statsData: {
+    vehicleId: string;
+    startDate: Date;
+    endDate: Date;
+    hoursOperated: number;
+    distanceTraveled: number;
+    fuelConsumed?: number;
+    idleTime?: number;
+  }): Promise<IUsageStats> {
+    try {
+      // Convert string ID to ObjectId if needed
+      const vehicleObjectId = typeof statsData.vehicleId === 'string' 
+        ? new mongoose.Types.ObjectId(statsData.vehicleId) 
+        : statsData.vehicleId;
+      
+      // Try to find an existing record for this vehicle and time period
+      const stats = await UsageStats.findOne({
+        vehicleId: vehicleObjectId,
+        startDate: statsData.startDate,
+        endDate: statsData.endDate
+      });
+      
+      if (stats) {
+        // Update existing record
+        stats.hoursOperated += statsData.hoursOperated || 0;
+        stats.distanceTraveled += statsData.distanceTraveled || 0;
+        
+        if (statsData.fuelConsumed !== undefined) {
+          stats.fuelConsumed = (stats.fuelConsumed || 0) + statsData.fuelConsumed;
+        }
+        
+        if (statsData.idleTime !== undefined) {
+          stats.idleTime = (stats.idleTime || 0) + statsData.idleTime;
+        }
+        
+        // Calculate efficiency if we have both distance and fuel data
+        if (stats.fuelConsumed && stats.fuelConsumed > 0 && stats.distanceTraveled > 0) {
+          stats.efficiency = stats.distanceTraveled / stats.fuelConsumed;
+        }
+        
+        await stats.save();
+        this.logger.debug(`Updated usage stats for vehicle ${statsData.vehicleId}, time period: ${statsData.startDate.toISOString()} - ${statsData.endDate.toISOString()}`);
+        return stats;
+      } else {
+        // Create new record
+        const newStats = await this.createUsageStats({
+          vehicleId: vehicleObjectId,
+          startDate: statsData.startDate,
+          endDate: statsData.endDate,
+          hoursOperated: statsData.hoursOperated || 0,
+          distanceTraveled: statsData.distanceTraveled || 0,
+          fuelConsumed: statsData.fuelConsumed,
+          idleTime: statsData.idleTime,
+          // Calculate efficiency if possible
+          efficiency: statsData.fuelConsumed && statsData.fuelConsumed > 0 && statsData.distanceTraveled > 0
+            ? statsData.distanceTraveled / statsData.fuelConsumed
+            : undefined
+        });
+        
+        return newStats;
+      }
+    } catch (error) {
+      this.logger.error(`Error recording usage stats: ${error}`);
+      throw error;
+    }
+  }
+
   // Get aggregate stats for a specific vehicle over a time period
   public async getAggregateVehicleStats(
     vehicleId: string,

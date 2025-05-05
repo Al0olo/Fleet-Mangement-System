@@ -135,7 +135,12 @@ export const startTripController = async (req: Request, res: Response): Promise<
     const trip = await startTrip(id);
     
     if (!trip) {
-      throw new HttpError('Trip not found', 404);
+      logger.warn(`Trip not found: ${id}`);
+      res.status(404).json({
+        success: false,
+        message: 'Trip not found'
+      });
+      return;
     }
     
     res.status(200).json({
@@ -162,7 +167,12 @@ export const completeTripController = async (req: Request, res: Response): Promi
     const trip = await completeTrip(id);
     
     if (!trip) {
-      throw new HttpError('Trip not found', 404);
+      logger.warn(`Trip not found: ${id}`);
+      res.status(404).json({
+        success: false,
+        message: 'Trip not found'
+      });
+      return;
     }
     
     res.status(200).json({

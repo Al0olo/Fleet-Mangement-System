@@ -15,7 +15,8 @@ export const config = {
     topics: {
       vehicleLocation: process.env.KAFKA_TOPIC_VEHICLE_LOCATION || 'vehicle-location',
       vehicleStatus: process.env.KAFKA_TOPIC_VEHICLE_STATUS || 'vehicle-status',
-      vehicleEvent: process.env.KAFKA_TOPIC_VEHICLE_EVENT || 'vehicle-event'
+      vehicleEvent: process.env.KAFKA_TOPIC_VEHICLE_EVENT || 'vehicle-event',
+      sensorData: process.env.KAFKA_TOPIC_SENSOR_DATA || 'sensor-data'
     }
   },
 

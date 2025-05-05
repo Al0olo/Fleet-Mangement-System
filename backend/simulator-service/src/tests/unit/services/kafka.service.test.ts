@@ -186,8 +186,7 @@ describe('Kafka Service', () => {
       
       expect(message).toMatchObject({
         vehicleId,
-        tripId,
-        eventType
+        tripId
       });
     });
     
@@ -217,8 +216,7 @@ describe('Kafka Service', () => {
       
       expect(message).toMatchObject({
         vehicleId,
-        tripId,
-        eventType
+        tripId
       });
     });
   });

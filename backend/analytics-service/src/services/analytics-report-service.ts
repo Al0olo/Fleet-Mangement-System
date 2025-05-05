@@ -43,10 +43,28 @@ class AnalyticsReportService {
         query.vehicleId = new mongoose.Types.ObjectId(vehicleId);
       }
       
+      this.logger.debug(`Fetching reports with query: ${JSON.stringify(query)}, limit: ${limit}`);
+      
+      // First check if there are any reports with this criteria
+      const count = await AnalyticsReport.countDocuments(query);
+      this.logger.debug(`Found ${count} reports matching criteria`);
+      
+      // If no reports with the specified type/period, try returning the most recent reports of any type/period
+      if (count === 0) {
+        this.logger.debug('No reports found with specified criteria, returning most recent reports');
+        const allReports = await AnalyticsReport.find({})
+          .sort({ createdAt: -1 })
+          .limit(limit);
+        
+        this.logger.debug(`Returning ${allReports.length} recent reports`);
+        return allReports;
+      }
+      
       const reports = await AnalyticsReport.find(query)
         .sort({ endDate: -1 })
         .limit(limit);
       
+      this.logger.debug(`Returning ${reports.length} matching reports`);
       return reports;
     } catch (error) {
       this.logger.error(`Error fetching reports: ${error}`);
@@ -183,6 +201,25 @@ class AnalyticsReportService {
         vehicleId, 'utilization', startDate, endDate
       );
       
+      // Calculate summary metrics for key metrics display
+      const avgUtilization = utilization && utilization.length > 0 
+        ? utilization.reduce((sum, m) => sum + m.value, 0) / utilization.length 
+        : 0;
+      
+      const avgFuelEfficiency = fuelEfficiency && fuelEfficiency.length > 0 
+        ? fuelEfficiency.reduce((sum, m) => sum + m.value, 0) / fuelEfficiency.length 
+        : 0;
+      
+      const avgCostPerHour = costMetrics && costMetrics.length > 0 
+        ? costMetrics.reduce((sum, m) => sum + m.value, 0) / costMetrics.length 
+        : 0;
+      
+      // Calculate cost per km based on available data
+      const totalDistance = usageStats.totalDistance || 0;
+      const totalHours = usageStats.totalHours || 0;
+      const totalCost = totalHours * avgCostPerHour;
+      const costPerKm = totalDistance > 0 ? totalCost / totalDistance : 0;
+      
       // Compile report data
       const reportData = {
         vehicleDetails,
@@ -199,6 +236,19 @@ class AnalyticsReportService {
           costMetrics: {
             metrics: costMetrics
           }
+        },
+        // Summary data for Key Metrics component
+        data: {
+          totalDistance: totalDistance,
+          totalFuelConsumption: usageStats.totalFuel || 0,
+          fuelEfficiency: avgFuelEfficiency,
+          utilizationRate: avgUtilization,
+          maintenanceCost: totalCost * 0.15, // Estimate maintenance cost as 15% of total operating cost
+          costPerKm: costPerKm,
+          // Add additional metrics that might be useful
+          totalHours: totalHours,
+          totalCost: totalCost,
+          idleTime: usageStats.totalIdle || 0
         },
         generatedAt: new Date()
       };

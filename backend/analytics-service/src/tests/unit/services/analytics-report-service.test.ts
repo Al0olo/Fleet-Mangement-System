@@ -9,6 +9,7 @@ jest.mock('../../../models/analytics-report', () => {
   const mockSave = jest.fn();
   const mockFind = jest.fn();
   const mockFindById = jest.fn();
+  const mockCountDocuments = jest.fn();
   
   // Create a constructor function that mocks the model
   function MockAnalyticsReport(this: any, data: any) {
@@ -25,6 +26,7 @@ jest.mock('../../../models/analytics-report', () => {
   const mockModel = {
     find: mockFind,
     findById: mockFindById,
+    countDocuments: mockCountDocuments,
     prototype: { save: mockSave }
   };
 
@@ -116,6 +118,9 @@ describe('AnalyticsReportService', () => {
         limit: mockLimitFn
       });
       
+      // Mock countDocuments to return a count > 0
+      (AnalyticsReport.countDocuments as jest.Mock).mockResolvedValueOnce(2);
+      
       // Execute
       const result = await analyticsReportService.getReports('fleet', 'monthly', undefined, 10);
       
@@ -131,6 +136,9 @@ describe('AnalyticsReportService', () => {
         sort: mockSortFn,
         limit: mockLimitFn
       });
+      
+      // Mock countDocuments to return a count > 0
+      (AnalyticsReport.countDocuments as jest.Mock).mockResolvedValueOnce(1);
       
       // Execute
       await analyticsReportService.getReports('vehicle', 'monthly', 'vehicle123', 5);

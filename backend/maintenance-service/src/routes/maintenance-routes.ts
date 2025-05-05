@@ -338,7 +338,7 @@ export default function setupMaintenanceRoutes(logger: Logger): Router {
    *       500:
    *         description: Server error
    */
-  router.get('docker/stats', maintenanceController.getMaintenanceStats);
+  router.get('/stats', maintenanceController.getMaintenanceStats);
 
   // Maintenance Schedule Routes
 
@@ -417,6 +417,115 @@ export default function setupMaintenanceRoutes(logger: Logger): Router {
    *         description: Server error
    */
   router.get('/schedules', scheduleController.getAllSchedules);
+
+  /**
+   * @swagger
+   * /api/schedules/upcoming:
+   *   get:
+   *     summary: Get upcoming maintenance schedules
+   *     description: Retrieve maintenance schedules that are coming up
+   *     tags: [Schedules]
+   *     parameters:
+   *       - in: query
+   *         name: days
+   *         schema:
+   *           type: integer
+   *           default: 30
+   *         description: Number of days to look ahead
+   *       - in: query
+   *         name: vehicleId
+   *         schema:
+   *           type: string
+   *         description: Filter by vehicle ID
+   *       - in: query
+   *         name: priority
+   *         schema:
+   *           type: string
+   *         description: Filter by priority
+   *     responses:
+   *       200:
+   *         description: A list of upcoming maintenance schedules
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 status:
+   *                   type: string
+   *                   example: success
+   *                 count:
+   *                   type: number
+   *                   example: 5
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     $ref: '#/components/schemas/MaintenanceSchedule'
+   *       500:
+   *         description: Server error
+   */
+  router.get('/schedules/upcoming', scheduleController.getUpcomingSchedules);
+
+  /**
+   * @swagger
+   * /api/schedules/overdue:
+   *   get:
+   *     summary: Get overdue maintenance schedules
+   *     description: Retrieve maintenance schedules that are overdue
+   *     tags: [Schedules]
+   *     parameters:
+   *       - in: query
+   *         name: vehicleId
+   *         schema:
+   *           type: string
+   *         description: Filter by vehicle ID
+   *     responses:
+   *       200:
+   *         description: A list of overdue maintenance schedules
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 status:
+   *                   type: string
+   *                   example: success
+   *                 count:
+   *                   type: number
+   *                   example: 2
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     $ref: '#/components/schemas/MaintenanceSchedule'
+   *       500:
+   *         description: Server error
+   */
+  router.get('/schedules/overdue', scheduleController.getOverdueSchedules);
+
+  /**
+   * @swagger
+   * /api/schedules/update-overdue:
+   *   post:
+   *     summary: Update overdue maintenance schedules
+   *     description: Change the status of scheduled maintenance to overdue if the date has passed
+   *     tags: [Schedules]
+   *     responses:
+   *       200:
+   *         description: Schedules updated successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 status:
+   *                   type: string
+   *                   example: success
+   *                 message:
+   *                   type: string
+   *                   example: Updated 3 schedules to overdue status
+   *       500:
+   *         description: Server error
+   */
+  router.post('/schedules/update-overdue', scheduleController.updateOverdueSchedules);
 
   /**
    * @swagger
@@ -561,115 +670,6 @@ export default function setupMaintenanceRoutes(logger: Logger): Router {
    *         description: Server error
    */
   router.delete('/schedules/:id', scheduleController.deleteSchedule);
-
-  /**
-   * @swagger
-   * /api/schedules/upcoming:
-   *   get:
-   *     summary: Get upcoming maintenance schedules
-   *     description: Retrieve maintenance schedules that are coming up
-   *     tags: [Schedules]
-   *     parameters:
-   *       - in: query
-   *         name: days
-   *         schema:
-   *           type: integer
-   *           default: 30
-   *         description: Number of days to look ahead
-   *       - in: query
-   *         name: vehicleId
-   *         schema:
-   *           type: string
-   *         description: Filter by vehicle ID
-   *       - in: query
-   *         name: priority
-   *         schema:
-   *           type: string
-   *         description: Filter by priority
-   *     responses:
-   *       200:
-   *         description: A list of upcoming maintenance schedules
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 status:
-   *                   type: string
-   *                   example: success
-   *                 count:
-   *                   type: number
-   *                   example: 5
-   *                 data:
-   *                   type: array
-   *                   items:
-   *                     $ref: '#/components/schemas/MaintenanceSchedule'
-   *       500:
-   *         description: Server error
-   */
-  router.get('/schedules/upcoming', scheduleController.getUpcomingSchedules);
-
-  /**
-   * @swagger
-   * /api/schedules/overdue:
-   *   get:
-   *     summary: Get overdue maintenance schedules
-   *     description: Retrieve maintenance schedules that are overdue
-   *     tags: [Schedules]
-   *     parameters:
-   *       - in: query
-   *         name: vehicleId
-   *         schema:
-   *           type: string
-   *         description: Filter by vehicle ID
-   *     responses:
-   *       200:
-   *         description: A list of overdue maintenance schedules
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 status:
-   *                   type: string
-   *                   example: success
-   *                 count:
-   *                   type: number
-   *                   example: 2
-   *                 data:
-   *                   type: array
-   *                   items:
-   *                     $ref: '#/components/schemas/MaintenanceSchedule'
-   *       500:
-   *         description: Server error
-   */
-  router.get('/schedules/overdue', scheduleController.getOverdueSchedules);
-
-  /**
-   * @swagger
-   * /api/schedules/update-overdue:
-   *   post:
-   *     summary: Update overdue maintenance schedules
-   *     description: Change the status of scheduled maintenance to overdue if the date has passed
-   *     tags: [Schedules]
-   *     responses:
-   *       200:
-   *         description: Schedules updated successfully
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 status:
-   *                   type: string
-   *                   example: success
-   *                 message:
-   *                   type: string
-   *                   example: Updated 3 schedules to overdue status
-   *       500:
-   *         description: Server error
-   */
-  router.post('/schedules/update-overdue', scheduleController.updateOverdueSchedules);
 
   /**
    * @swagger

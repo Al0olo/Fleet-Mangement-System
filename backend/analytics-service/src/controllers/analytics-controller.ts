@@ -266,10 +266,37 @@ class AnalyticsController {
         interval as 'day' | 'week' | 'month'
       );
 
+      // Transform data to match frontend MetricTrend interface
+      const transformedTrends = trends.map((trend, index, arr) => {
+        // Calculate change compared to previous period (if available)
+        const prevValue = index > 0 ? arr[index - 1].avgValue : trend.avgValue;
+        const change = index > 0 ? trend.avgValue - prevValue : 0;
+        
+        // Determine trend direction
+        let trendDirection: 'up' | 'down' | 'stable' = 'stable';
+        if (change > 0.01) {
+          trendDirection = 'up';
+        } else if (change < -0.01) {
+          trendDirection = 'down';
+        }
+        
+        return {
+          period: trend.period,
+          value: trend.avgValue,
+          change: change,
+          trend: trendDirection,
+          // Include original data for reference
+          count: trend.count,
+          minValue: trend.minValue,
+          maxValue: trend.maxValue,
+          firstDate: trend.firstDate
+        };
+      });
+
       res.status(200).json({
         status: 'success',
-        count: trends.length,
-        data: trends
+        count: transformedTrends.length,
+        data: transformedTrends
       });
     } catch (error) {
       this.logger.error(`Error getting metric trends: ${error}`);

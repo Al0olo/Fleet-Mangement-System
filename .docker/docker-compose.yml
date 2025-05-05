@@ -4,125 +4,192 @@ services:
   # API Gateway
   api-gateway:
     build:
-      context: ./backend/api-gateway
+      context: ../backend/api-gateway
+      dockerfile: Dockerfile
+    image: fleet-management/api-gateway:latest
     ports:
       - "8080:8080"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
+      - PORT=8080
+      - LOG_LEVEL=info
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - ENABLE_GLOBAL_RATE_LIMIT=true
+      - INSTANCE_ID=api-gateway-1
+      - REDIS_CONNECT_RETRIES=10
+      - REDIS_CONNECT_RETRY_DELAY=2000
+      - VEHICLE_SERVICE_URL=http://vehicle-service:3000
+      - TRACKING_SERVICE_URL=http://tracking-service:3001
+      - MAINTENANCE_SERVICE_URL=http://maintenance-service:3002
+      - ANALYTICS_SERVICE_URL=http://analytics-service:3003
+      - SIMULATOR_SERVICE_URL=http://simulator-service:3004
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - fleet-network
-    volumes:
-      - ./backend/api-gateway:/app
-      - /app/node_modules
+    command: npm run start
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # Simulator Service
   simulator-service:
     build:
-      context: ./backend/simulator-service
+      context: ../backend/simulator-service
+      dockerfile: Dockerfile
+    image: fleet-management/simulator-service:latest
     ports:
       - "3004:3004"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - MONGO_URI=mongodb://admin:password@mongodb:27017/fleet-simulator?authSource=admin
       - KAFKA_BROKERS=kafka:29092
       - PORT=3004
+      - LOG_LEVEL=info
     depends_on:
-      - mongodb
-      - kafka
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - fleet-network
+    command: npm run start
     volumes:
-      - ./backend/simulator-service:/app
-      - /app/node_modules
+    - simulator-logs:/usr/src/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # Vehicle Service
   vehicle-service:
     build:
-      context: ./backend/vehicle-service
+      context: ../backend/vehicle-service
+      dockerfile: Dockerfile
+    image: fleet-management/vehicle-service:latest
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/fleet-vehicles?authSource=admin
       - KAFKA_BROKERS=kafka:29092
       - PORT=3000
+      - LOG_LEVEL=info
     depends_on:
-      - mongodb
-      - kafka
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - fleet-network
-    volumes:
-      - ./backend/vehicle-service:/app
-      - /app/node_modules
+    command: npm run start
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # Tracking Service
   tracking-service:
     build:
-      context: ./backend/tracking-service
+      context: ../backend/tracking-service
+      dockerfile: Dockerfile
+    image: fleet-management/tracking-service:latest
     ports:
       - "3001:3001"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/fleet-tracking?authSource=admin
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - KAFKA_BROKERS=kafka:29092
       - PORT=3001
+      - LOG_LEVEL=info
     depends_on:
-      - mongodb
-      - redis
-      - kafka
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - fleet-network
-    volumes:
-      - ./backend/tracking-service:/app
-      - /app/node_modules
+    command: npm run start
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # Maintenance Service
   maintenance-service:
     build:
-      context: ./backend/maintenance-service
+      context: ../backend/maintenance-service
+      dockerfile: Dockerfile
+    image: fleet-management/maintenance-service:latest
     ports:
       - "3002:3002"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/fleet-maintenance?authSource=admin
       - KAFKA_BROKERS=kafka:29092
       - PORT=3002
+      - LOG_LEVEL=info
     depends_on:
-      - mongodb
-      - kafka
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - fleet-network
-    volumes:
-      - ./backend/maintenance-service:/app
-      - /app/node_modules
+    command: npm run start
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # Analytics Service
   analytics-service:
     build:
-      context: ./backend/analytics-service
+      context: ../backend/analytics-service
+      dockerfile: Dockerfile
+    image: fleet-management/analytics-service:latest
     ports:
       - "3003:3003"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/fleet-analytics?authSource=admin
       - KAFKA_BROKERS=kafka:29092
-      - VEHICLE_SERVICE_URL=http://vehicle-service:3000/api
+      - VEHICLE_SERVICE_URL=http://api-gateway:8080/api
       - PORT=3003
+      - LOG_LEVEL=info
     depends_on:
-      - mongodb
-      - kafka
-      - vehicle-service
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      vehicle-service:
+        condition: service_healthy
     networks:
       - fleet-network
-    volumes:
-      - ./backend/analytics-service:/app
-      - /app/node_modules
+    command: npm run start
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
       
   # MongoDB Database
   mongodb:
@@ -136,6 +203,16 @@ services:
       - mongodb-data:/data/db
     networks:
       - fleet-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # Redis Cache
   redis:
@@ -144,8 +221,19 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     networks:
       - fleet-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 300M
 
   # Kafka and Zookeeper for event streaming
   zookeeper:
@@ -157,11 +245,18 @@ services:
       - "2181:2181"
     networks:
       - fleet-network
+    healthcheck:
+      test: echo stat | nc localhost 2181
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   kafka:
     image: confluentinc/cp-kafka:latest
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     ports:
       - "9092:9092"
     environment:
@@ -173,6 +268,12 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
       - fleet-network
+    healthcheck:
+      test: kafka-topics --bootstrap-server kafka:29092 --list
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Kafka UI for easier management
   kafka-ui:
@@ -184,7 +285,8 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     networks:
       - fleet-network
 
@@ -198,15 +300,22 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: password
       ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - fleet-network
+    healthcheck:
+      test: wget --quiet --tries=1 --spider http://localhost:8081/ || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 # Define volumes
 volumes:
   mongodb-data:
   redis-data:
-
+  simulator-logs:
 # Define networks
 networks:
   fleet-network:

@@ -1,16 +1,22 @@
 import { configureStore } from '@reduxjs/toolkit';
 import vehicleReducer from './slices/vehicleSlice';
-import maintenanceReducer from './slices/maintenanceSlice';
+import maintenanceRecordReducer from './slices/maintenanceRecordSlice';
+import maintenanceScheduleReducer from './slices/maintenanceScheduleSlice';
+import maintenanceStatsReducer from './slices/maintenanceStatsSlice';
 import analyticsReducer from './slices/analyticsSlice';
 import simulatorReducer from './slices/simulatorSlice';
+import trackingReducer from './slices/trackingSlice';
 import uiReducer from './slices/uiSlice';
 
 export const store = configureStore({
   reducer: {
     vehicles: vehicleReducer,
-    maintenance: maintenanceReducer,
+    maintenanceRecords: maintenanceRecordReducer,
+    maintenanceSchedules: maintenanceScheduleReducer, 
+    maintenanceStats: maintenanceStatsReducer,
     analytics: analyticsReducer,
     simulator: simulatorReducer,
+    tracking: trackingReducer,
     ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>

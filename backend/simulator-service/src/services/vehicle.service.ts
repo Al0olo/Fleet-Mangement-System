@@ -4,6 +4,7 @@ import { Vehicle, IVehicle, VehicleStatus, VehicleType, GeoPoint } from '../mode
 import { logger } from '../util/logger';
 import axios from 'axios';
 import { config } from '../config';
+import { publishLocationUpdate, publishStatusUpdate } from './kafka.service';
 
 /**
  * Generate a random point within a radius of a center point
@@ -65,30 +66,49 @@ const generateVehicleName = (type: VehicleType): string => {
  */
 export const createSimulatedVehicle = async (
   region: { centerLat: number; centerLng: number; radiusKm: number },
-  type?: VehicleType
+  type?: VehicleType,
+  vehicleData?: {
+    vehicleId?: string;
+    vin?: string;
+    name?: string;
+    location?: GeoPoint;
+    speed?: number;
+    heading?: number;
+    fuelLevel?: number;
+    odometer?: number;
+    engineHours?: number;
+    active?: boolean;
+  }
 ): Promise<IVehicle> => {
   const vehicleType = type || Object.values(VehicleType)[
     Math.floor(Math.random() * Object.values(VehicleType).length)
   ];
   
-  const point = generateRandomPoint(region.centerLat, region.centerLng, region.radiusKm);
+  // Generate a random point if location is not provided
+  let coordinates: [number, number];
+  if (vehicleData?.location?.coordinates) {
+    coordinates = vehicleData.location.coordinates;
+  } else {
+    const point = generateRandomPoint(region.centerLat, region.centerLng, region.radiusKm);
+    coordinates = [point.longitude, point.latitude];
+  }
   
   const vehicle = new Vehicle({
-    vehicleId: uuidv4(),
-    vin: generateRandomVIN(),
-    name: generateVehicleName(vehicleType),
+    vehicleId: vehicleData?.vehicleId || uuidv4(),
+    vin: vehicleData?.vin || generateRandomVIN(),
+    name: vehicleData?.name || generateVehicleName(vehicleType),
     type: vehicleType,
     status: VehicleStatus.IDLE,
     location: {
       type: 'Point',
-      coordinates: [point.longitude, point.latitude]
+      coordinates: coordinates
     },
-    speed: 0,
-    heading: Math.floor(Math.random() * 360),
-    fuelLevel: 70 + Math.floor(Math.random() * 30), // 70-100%
-    odometer: Math.floor(Math.random() * 50000),
-    engineHours: Math.floor(Math.random() * 1000),
-    active: true
+    speed: vehicleData?.speed !== undefined ? vehicleData.speed : 0,
+    heading: vehicleData?.heading !== undefined ? vehicleData.heading : Math.floor(Math.random() * 360),
+    fuelLevel: vehicleData?.fuelLevel !== undefined ? vehicleData.fuelLevel : 70 + Math.floor(Math.random() * 30), // 70-100%
+    odometer: vehicleData?.odometer !== undefined ? vehicleData.odometer : Math.floor(Math.random() * 50000),
+    engineHours: vehicleData?.engineHours !== undefined ? vehicleData.engineHours : Math.floor(Math.random() * 1000),
+    active: vehicleData?.active !== undefined ? vehicleData.active : true
   });
   
   try {
@@ -159,6 +179,17 @@ export const updateVehicleStatus = async (vehicleId: string, status: VehicleStat
       return null;
     }
     
+    // Publish status update to Kafka so tracking-service can consume it
+    try {
+      await publishStatusUpdate(
+        vehicleId,
+        status
+      );
+    } catch (error) {
+      logger.error(`Failed to publish status update to Kafka for vehicle ${vehicleId}`, error);
+      // Don't throw error here, just log it to avoid breaking the API
+    }
+    
     logger.debug(`Updated vehicle status: ${vehicleId} -> ${status}`);
     return vehicle;
   } catch (error) {
@@ -173,16 +204,16 @@ export const updateVehicleStatus = async (vehicleId: string, status: VehicleStat
 export const updateVehicleLocation = async (
   vehicleId: string,
   location: GeoPoint,
-  speed: number,
-  heading: number
+  speed?: number,
+  heading?: number
 ): Promise<IVehicle | null> => {
   try {
     const vehicle = await Vehicle.findOneAndUpdate(
       { vehicleId },
       { 
         location,
-        speed,
-        heading,
+        speed: speed || 0,
+        heading: heading || 0,
         lastUpdated: new Date()
       },
       { new: true }
@@ -191,6 +222,20 @@ export const updateVehicleLocation = async (
     if (!vehicle) {
       logger.warn(`Vehicle not found: ${vehicleId}`);
       return null;
+    }
+    
+    // Publish location update to Kafka so tracking-service can consume it
+    try {
+      await publishLocationUpdate(
+        vehicleId,
+        location.coordinates[1],  // latitude
+        location.coordinates[0],  // longitude
+        speed || 0,
+        heading || 0
+      );
+    } catch (error) {
+      logger.error(`Failed to publish location update to Kafka for vehicle ${vehicleId}`, error);
+      // Don't throw error here, just log it to avoid breaking the API
     }
     
     logger.debug(`Updated vehicle location: ${vehicleId}`);
