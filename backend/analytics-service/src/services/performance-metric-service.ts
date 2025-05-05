@@ -1,6 +1,7 @@
 import { Logger } from 'winston';
 import mongoose from 'mongoose';
 import PerformanceMetric, { IPerformanceMetric } from '../models/performance-metric';
+import { buildDateRangeQuery, getIntervalConfig } from '../util/metrics-helpers';
 
 class PerformanceMetricService {
   private logger: Logger;
@@ -32,23 +33,11 @@ class PerformanceMetricService {
     limit: number = 100
   ): Promise<IPerformanceMetric[]> {
     try {
-      // Build query with optional date range
-      const query: Record<string, any> = { 
-        vehicleId: new mongoose.Types.ObjectId(vehicleId),
-        metricType
-      };
+      const query: Record<string, any> = { vehicleId, metricType };
       
-      if (startDate || endDate) {
-        query.timestamp = {};
-        
-        if (startDate) {
-          query.timestamp.$gte = startDate;
-        }
-        
-        if (endDate) {
-          query.timestamp.$lte = endDate;
-        }
-      }
+      // Use the helper function to build date range query
+      const dateQuery = buildDateRangeQuery('timestamp', startDate, endDate);
+      Object.assign(query, dateQuery);
       
       const metrics = await PerformanceMetric.find(query)
         .sort({ timestamp: -1 })
@@ -70,30 +59,8 @@ class PerformanceMetricService {
     interval: 'day' | 'week' | 'month' = 'day'
   ): Promise<any[]> {
     try {
-      let dateFormat: string;
-      let groupByFormat: Record<string, any>;
-      
-      // Define date formats and groupings based on interval
-      if (interval === 'day') {
-        dateFormat = '%Y-%m-%d';
-        groupByFormat = {
-          year: { $year: '$timestamp' },
-          month: { $month: '$timestamp' },
-          day: { $dayOfMonth: '$timestamp' }
-        };
-      } else if (interval === 'week') {
-        dateFormat = '%Y-W%U';
-        groupByFormat = {
-          year: { $year: '$timestamp' },
-          week: { $week: '$timestamp' }
-        };
-      } else { // month
-        dateFormat = '%Y-%m';
-        groupByFormat = {
-          year: { $year: '$timestamp' },
-          month: { $month: '$timestamp' }
-        };
-      }
+      // Use the helper function to get date format and grouping config
+      const { dateFormat, groupByFormat } = getIntervalConfig(interval);
       
       const trendData = await PerformanceMetric.aggregate([
         {

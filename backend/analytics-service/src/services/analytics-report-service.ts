@@ -4,6 +4,12 @@ import axios from 'axios';
 import AnalyticsReport, { IAnalyticsReport } from '../models/analytics-report';
 import UsageStatsService from './usage-stats-service';
 import PerformanceMetricService from './performance-metric-service';
+import { 
+  compileReportData, 
+  compileFleetReportData, 
+  compileUtilizationReportData, 
+  compileCostReportData 
+} from '../util/analytics-helpers';
 
 class AnalyticsReportService {
   private logger: Logger;
@@ -121,22 +127,14 @@ class AnalyticsReportService {
         'costPerHour', startDate, endDate
       );
       
-      // Compile report data
-      const reportData = {
-        fleetOverview: {
-          totalVehicles: Object.values(vehicleData.countByType || {})
-            .reduce((sum: number, count: any) => sum + count, 0),
-          vehiclesByType: vehicleData.countByType || {},
-          vehiclesByStatus: vehicleData.countByStatus || {}
-        },
-        usageStats: fleetUsageStats,
-        performanceMetrics: {
-          fuelEfficiency,
-          utilization,
-          costPerHour: costMetrics
-        },
-        generatedAt: new Date()
-      };
+      // Use helper function to compile report data
+      const reportData = compileFleetReportData(
+        vehicleData,
+        fleetUsageStats,
+        fuelEfficiency,
+        utilization,
+        costMetrics
+      );
       
       // Save the report
       const report = await this.saveReport({
@@ -201,57 +199,16 @@ class AnalyticsReportService {
         vehicleId, 'utilization', startDate, endDate
       );
       
-      // Calculate summary metrics for key metrics display
-      const avgUtilization = utilization && utilization.length > 0 
-        ? utilization.reduce((sum, m) => sum + m.value, 0) / utilization.length 
-        : 0;
-      
-      const avgFuelEfficiency = fuelEfficiency && fuelEfficiency.length > 0 
-        ? fuelEfficiency.reduce((sum, m) => sum + m.value, 0) / fuelEfficiency.length 
-        : 0;
-      
-      const avgCostPerHour = costMetrics && costMetrics.length > 0 
-        ? costMetrics.reduce((sum, m) => sum + m.value, 0) / costMetrics.length 
-        : 0;
-      
-      // Calculate cost per km based on available data
-      const totalDistance = usageStats.totalDistance || 0;
-      const totalHours = usageStats.totalHours || 0;
-      const totalCost = totalHours * avgCostPerHour;
-      const costPerKm = totalDistance > 0 ? totalCost / totalDistance : 0;
-      
-      // Compile report data
-      const reportData = {
+      // Use the helper function to compile report data instead of inline calculations
+      const reportData = compileReportData(
         vehicleDetails,
         usageStats,
-        performanceMetrics: {
-          fuelEfficiency: {
-            metrics: fuelEfficiency,
-            fleetComparison: fuelComparison
-          },
-          utilization: {
-            metrics: utilization,
-            fleetComparison: utilizationComparison
-          },
-          costMetrics: {
-            metrics: costMetrics
-          }
-        },
-        // Summary data for Key Metrics component
-        data: {
-          totalDistance: totalDistance,
-          totalFuelConsumption: usageStats.totalFuel || 0,
-          fuelEfficiency: avgFuelEfficiency,
-          utilizationRate: avgUtilization,
-          maintenanceCost: totalCost * 0.15, // Estimate maintenance cost as 15% of total operating cost
-          costPerKm: costPerKm,
-          // Add additional metrics that might be useful
-          totalHours: totalHours,
-          totalCost: totalCost,
-          idleTime: usageStats.totalIdle || 0
-        },
-        generatedAt: new Date()
-      };
+        utilization,
+        fuelEfficiency,
+        costMetrics,
+        utilizationComparison,
+        fuelComparison
+      );
       
       // Save the report
       const report = await this.saveReport({
@@ -296,18 +253,13 @@ class AnalyticsReportService {
         'utilization', startDate, endDate
       );
       
-      // Compile report data
-      const reportData = {
-        fleetUtilization: {
-          ...fleetUsageStats,
-          utilizationAverage
-        },
-        topPerformers: {
-          byHours: topVehiclesByHours,
-          byDistance: topVehiclesByDistance
-        },
-        generatedAt: new Date()
-      };
+      // Use helper function to compile report data
+      const reportData = compileUtilizationReportData(
+        fleetUsageStats,
+        utilizationAverage,
+        topVehiclesByHours,
+        topVehiclesByDistance
+      );
       
       // Save the report
       const report = await this.saveReport({
@@ -343,14 +295,11 @@ class AnalyticsReportService {
         'costPerKm', startDate, endDate
       );
       
-      // Compile report data
-      const reportData = {
-        costMetrics: {
-          costPerHour: costPerHourAvg,
-          costPerKm: costPerKmAvg
-        },
-        generatedAt: new Date()
-      };
+      // Use helper function to compile report data
+      const reportData = compileCostReportData(
+        costPerHourAvg,
+        costPerKmAvg
+      );
       
       // Save the report
       const report = await this.saveReport({
