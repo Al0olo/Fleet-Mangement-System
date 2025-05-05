@@ -91,11 +91,6 @@ export default class ScheduleService {
     
     this.logger.info(`Created maintenance schedule ${newSchedule.id}`);
     
-    // In a real application, here we might also:
-    // - Send notifications to responsible parties
-    // - Publish events to other systems
-    // - Update vehicle availability calendar
-    
     return newSchedule;
   }
 
@@ -198,7 +193,6 @@ export default class ScheduleService {
 
   /**
    * Update status of maintenance schedules to 'overdue' if they are past their scheduled date
-   * This would typically be called by a scheduled job
    */
   async updateOverdueSchedules() {
     const now = new Date();
