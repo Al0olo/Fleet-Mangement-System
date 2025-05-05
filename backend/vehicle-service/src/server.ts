@@ -171,7 +171,7 @@ export function createServer(customLogger?: winston.Logger) {
   });
 
   // Set up Swagger UI
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  app.use(['/api-docs', '/api/docs'], swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
     customSiteTitle: "Vehicle Service API Documentation",
@@ -186,7 +186,7 @@ export function createServer(customLogger?: winston.Logger) {
   });
 
   // Health check endpoint
-  app.get('/health', (_req: Request, res: Response) => {
+  app.get(['/health', '/api/health'], (_req: Request, res: Response) => {
     res.status(200).json({ 
       status: 'OK', 
       message: 'Vehicle Service is running',

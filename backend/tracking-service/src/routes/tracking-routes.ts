@@ -14,7 +14,153 @@ import { RedisClientType } from 'redis';
  *     description: Vehicle status operations
  *   - name: Events
  *     description: Vehicle events operations
+ * components:
+ *   schemas:
+ *     GeoLocation:
+ *       type: object
+ *       required:
+ *         - type
+ *         - coordinates
+ *       properties:
+ *         type:
+ *           type: string
+ *           description: The GeoJSON type
+ *           example: Point
+ *         coordinates:
+ *           type: array
+ *           description: Longitude and Latitude coordinates [lng, lat]
+ *           items:
+ *             type: number
+ *           example: [55.3781, 3.4360]
+ *     LocationData:
+ *       type: object
+ *       required:
+ *         - vehicleId
+ *         - timestamp
+ *         - location
+ *       properties:
+ *         vehicleId:
+ *           type: string
+ *           description: The unique identifier of the vehicle
+ *         timestamp:
+ *           type: string
+ *           format: date-time
+ *           description: The date and time when the location was recorded
+ *         location:
+ *           $ref: '#/components/schemas/GeoLocation'
+ *         speed:
+ *           type: number
+ *           description: Speed in kilometers per hour
+ *         heading:
+ *           type: number
+ *           description: Heading in degrees (0-360)
+ *         altitude:
+ *           type: number
+ *           description: Altitude in meters
+ *         accuracy:
+ *           type: number
+ *           description: Accuracy of the location data in meters
+ *         metadata:
+ *           type: object
+ *           description: Additional metadata about the location
+ *     TripInfo:
+ *       type: object
+ *       properties:
+ *         tripId:
+ *           type: string
+ *           description: The unique identifier of the trip
+ *         startTime:
+ *           type: string
+ *           format: date-time
+ *           description: Trip start timestamp
+ *         endTime:
+ *           type: string
+ *           format: date-time
+ *           description: Trip end timestamp
+ *         startLocation:
+ *           $ref: '#/components/schemas/GeoLocation'
+ *         endLocation:
+ *           $ref: '#/components/schemas/GeoLocation'
+ *         distance:
+ *           type: number
+ *           description: Trip distance in kilometers
+ *         duration:
+ *           type: number
+ *           description: Trip duration in minutes
+ *     VehicleEvent:
+ *       type: object
+ *       required:
+ *         - vehicleId
+ *         - timestamp
+ *         - eventType
+ *       properties:
+ *         vehicleId:
+ *           type: string
+ *           description: The unique identifier of the vehicle
+ *         timestamp:
+ *           type: string
+ *           format: date-time
+ *           description: The date and time when the event occurred
+ *         eventType:
+ *           type: string
+ *           description: Type of vehicle event
+ *           enum: [TRIP_STARTED, TRIP_COMPLETED, MAINTENANCE_DUE, IDLE_STARTED, IDLE_ENDED, GEOFENCE_ENTER, GEOFENCE_EXIT, BATTERY_LOW, FUEL_LOW]
+ *           example: TRIP_COMPLETED
+ *         description:
+ *           type: string
+ *           description: Human-readable description of the event
+ *         tripInfo:
+ *           $ref: '#/components/schemas/TripInfo'
+ *         location:
+ *           $ref: '#/components/schemas/GeoLocation'
+ *         metadata:
+ *           type: object
+ *           description: Additional metadata about the event
+ *     VehicleStatus:
+ *       type: object
+ *       required:
+ *         - vehicleId
+ *         - timestamp
+ *         - status
+ *       properties:
+ *         vehicleId:
+ *           type: string
+ *           description: The unique identifier of the vehicle
+ *         timestamp:
+ *           type: string
+ *           format: date-time
+ *           description: The date and time when the status was recorded
+ *         status:
+ *           type: string
+ *           description: Current status of the vehicle
+ *           enum: [ACTIVE, IDLE, MAINTENANCE, OUT_OF_SERVICE]
+ *           example: ACTIVE
+ *         fuelLevel:
+ *           type: number
+ *           description: Current fuel level percentage
+ *           minimum: 0
+ *           maximum: 100
+ *           example: 75
+ *         batteryLevel:
+ *           type: number
+ *           description: Current battery level percentage
+ *           minimum: 0
+ *           maximum: 100
+ *           example: 85
+ *         engineStatus:
+ *           type: string
+ *           description: Engine status
+ *           enum: [ON, OFF, ERROR]
+ *           example: ON
+ *         odometer:
+ *           type: number
+ *           description: Current odometer reading in kilometers
+ *           example: 12500
+ *         metadata:
+ *           type: object
+ *           description: Additional metadata about the vehicle status
  */
+
 
 /**
  * @swagger

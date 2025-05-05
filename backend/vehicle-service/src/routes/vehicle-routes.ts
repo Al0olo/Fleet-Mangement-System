@@ -9,6 +9,71 @@ const router: Router = express.Router();
  * tags:
  *   name: Vehicles
  *   description: Vehicle management operations
+ * components:
+ *   schemas:
+ *     Vehicle:
+ *       type: object
+ *       required:
+ *         - model
+ *         - type
+ *         - status
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: Auto-generated unique identifier
+ *         model:
+ *           type: string
+ *           description: Vehicle model
+ *         type:
+ *           type: string
+ *           description: Type of vehicle (e.g., truck, excavator, loader)
+ *           enum: [truck, excavator, loader, bulldozer, crane, other]
+ *         status:
+ *           type: string
+ *           description: Current vehicle status
+ *           enum: [active, maintenance, inactive, retired]
+ *         registrationDate:
+ *           type: string
+ *           format: date-time
+ *           description: Date vehicle was registered in the system
+ *         metadata:
+ *           type: object
+ *           description: Additional vehicle specifications
+ *           properties:
+ *             year:
+ *               type: number
+ *               description: Manufacturing year
+ *             manufacturer:
+ *               type: string
+ *               description: Vehicle manufacturer
+ *             fuelType:
+ *               type: string
+ *               description: Type of fuel used
+ *             capacity:
+ *               type: number
+ *               description: Load capacity or engine size
+ *             vin:
+ *               type: string
+ *               description: Vehicle Identification Number
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Date when the vehicle was created
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Date when the vehicle was last updated
+ *       example:
+ *         model: CAT 336
+ *         type: excavator
+ *         status: active
+ *         registrationDate: 2023-01-15T08:30:00Z
+ *         metadata:
+ *           year: 2022
+ *           manufacturer: Caterpillar
+ *           fuelType: diesel
+ *           capacity: 36
+ *           vin: 4Y1SL65848Z411439
  */
 
 export default function setupVehicleRoutes(logger: Logger): Router {
@@ -16,7 +81,7 @@ export default function setupVehicleRoutes(logger: Logger): Router {
 
   /**
    * @swagger
-   * /api/vehicles:
+   * /api:
    *   get:
    *     summary: Get all vehicles
    *     description: Retrieve a list of vehicles with optional filtering
@@ -98,7 +163,7 @@ export default function setupVehicleRoutes(logger: Logger): Router {
 
   /**
    * @swagger
-   * /api/vehicles/stats:
+   * /api/stats:
    *   get:
    *     summary: Get vehicle statistics
    *     description: Retrieve statistics about the vehicle fleet
@@ -130,7 +195,7 @@ export default function setupVehicleRoutes(logger: Logger): Router {
 
   /**
    * @swagger
-   * /api/vehicles/{id}:
+   * /api/{id}:
    *   get:
    *     summary: Get a vehicle by ID
    *     description: Retrieve a single vehicle by its ID
@@ -164,7 +229,7 @@ export default function setupVehicleRoutes(logger: Logger): Router {
 
   /**
    * @swagger
-   * /api/vehicles/{id}:
+   * /api/{id}:
    *   put:
    *     summary: Update a vehicle
    *     description: Update vehicle information by ID
@@ -206,7 +271,7 @@ export default function setupVehicleRoutes(logger: Logger): Router {
 
   /**
    * @swagger
-   * /api/vehicles/{id}:
+   * /api/{id}:
    *   delete:
    *     summary: Delete a vehicle
    *     description: Remove a vehicle from the system
@@ -241,7 +306,7 @@ export default function setupVehicleRoutes(logger: Logger): Router {
 
   /**
    * @swagger
-   * /api/vehicles:
+   * /api/:
    *   post:
    *     summary: Create a new vehicle
    *     description: Add a new vehicle to the fleet

@@ -1,58 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     GeoLocation:
- *       type: object
- *       required:
- *         - type
- *         - coordinates
- *       properties:
- *         type:
- *           type: string
- *           description: The GeoJSON type
- *           example: Point
- *         coordinates:
- *           type: array
- *           description: Longitude and Latitude coordinates [lng, lat]
- *           items:
- *             type: number
- *           example: [55.3781, 3.4360]
- *     LocationData:
- *       type: object
- *       required:
- *         - vehicleId
- *         - timestamp
- *         - location
- *       properties:
- *         vehicleId:
- *           type: string
- *           description: The unique identifier of the vehicle
- *         timestamp:
- *           type: string
- *           format: date-time
- *           description: The date and time when the location was recorded
- *         location:
- *           $ref: '#/components/schemas/GeoLocation'
- *         speed:
- *           type: number
- *           description: Speed in kilometers per hour
- *         heading:
- *           type: number
- *           description: Heading in degrees (0-360)
- *         altitude:
- *           type: number
- *           description: Altitude in meters
- *         accuracy:
- *           type: number
- *           description: Accuracy of the location data in meters
- *         metadata:
- *           type: object
- *           description: Additional metadata about the location
- */
-
 // Define the interface for location data
 export interface ILocationData extends Document {
   vehicleId: mongoose.Types.ObjectId | string;
