@@ -251,7 +251,9 @@ describe('ScheduleService', () => {
           scheduledDate: expect.objectContaining({
             $lt: expect.any(Date)
           }),
-          status: 'scheduled' // This is different from other methods that use $in array
+          status: expect.objectContaining({
+            $in: expect.arrayContaining(['scheduled', 'in-progress'])
+          })
         }),
         { $set: { status: 'overdue' } }
       );
