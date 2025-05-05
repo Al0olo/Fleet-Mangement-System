@@ -33,6 +33,27 @@ const Dashboard = () => {
     dispatch(fetchAnalyticsData());
     dispatch(fetchUpcomingSchedules({ days: 7 })); // Get schedules due in the next 7 days
     dispatch(fetchOverdueSchedules({})); // Pass empty object as parameter
+
+    // Add media query handling for responsive card layout
+    const handleResize = () => {
+      const dashboardCardsElement = document.querySelector(".dashboard-cards");
+      if (dashboardCardsElement) {
+        if (window.innerWidth < 992) {
+          (dashboardCardsElement as HTMLElement).style.gridTemplateColumns = window.innerWidth < 576 
+            ? '1fr' 
+            : 'repeat(2, 1fr)';
+        } else {
+          (dashboardCardsElement as HTMLElement).style.gridTemplateColumns = 'repeat(4, 1fr)';
+        }
+      }
+    };
+
+    // Call once immediately and add event listener
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    // Clean up
+    return () => window.removeEventListener('resize', handleResize);
   }, [dispatch]);
 
   const loading = vehiclesLoading || analyticsLoading || schedulesLoading;
@@ -156,6 +177,8 @@ const Dashboard = () => {
     dashboardContainer: {
       padding: '20px',
       maxWidth: '100%',
+      boxSizing: 'border-box' as const,
+      width: '100%',
     },
     dashboardHeader: {
       marginBottom: '24px',
@@ -164,7 +187,7 @@ const Dashboard = () => {
     },
     dashboardCards: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+      gridTemplateColumns: 'repeat(4, 1fr)',
       gap: '20px',
       marginBottom: '24px',
     },
@@ -176,6 +199,7 @@ const Dashboard = () => {
       transition: 'all 0.2s ease',
       borderLeft: '4px solid transparent',
       height: '100%',
+      width: '100%',
     },
     vehiclesCard: {
       borderLeftColor: 'var(--primary-color)',
@@ -299,7 +323,7 @@ const Dashboard = () => {
         <div>Loading...</div>
       ) : (
         <>
-          <div style={styles.dashboardCards}>
+          <div className="dashboard-cards" style={styles.dashboardCards}>
             <div className="card" style={{...styles.dashboardCard, ...styles.vehiclesCard}}>
               <h3>Total Vehicles</h3>
               <p style={styles.dashboardValue}>{analytics.totalVehicles || (Array.isArray(vehicles) ? vehicles.length : 0)}</p>
