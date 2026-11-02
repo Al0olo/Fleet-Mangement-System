@@ -117,6 +117,24 @@ Health and diagnostic endpoints:
 - `/api/diagnostics` - Detailed diagnostics with upstream service connectivity
 - `/metrics` - Prometheus metrics
 
+## Troubleshooting
+
+### Tracking and Maintenance services conflict on port 3002
+
+The gateway's default upstream URL for both the Tracking Service (`TRACKING_SERVICE_URL`) and the Maintenance Service (`MAINTENANCE_SERVICE_URL`) is `http://localhost:3002`. The Tracking Service's `.env.example` also sets `PORT=3002`, and the Maintenance Service listens on 3002 by default. If you run both locally with their defaults, the second one fails to start with an `EADDRINUSE` error, or the gateway sends requests to the wrong service.
+
+To fix it, give each service its own port:
+
+1. Set a different `PORT` in each service's `.env` (for example `PORT=3001` for the Tracking Service and `PORT=3002` for the Maintenance Service) and restart both.
+2. Point the gateway at the new ports, then restart it:
+
+```
+TRACKING_SERVICE_URL=http://localhost:3001
+MAINTENANCE_SERVICE_URL=http://localhost:3002
+```
+
+When using Docker Compose, also update the published port mapping (for example `"3001:3001"`) and the service URL in the gateway's environment to match.
+
 ## Development
 
 ### Adding a New Service Proxy
