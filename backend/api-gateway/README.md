@@ -85,6 +85,20 @@ npm run dev
 npm run start:cluster
 ```
 
+## Running the tests
+
+To run the gateway's tests locally, from the `backend/api-gateway` folder:
+
+```bash
+# Install dependencies (first time only)
+npm ci
+
+# Run all tests
+npm test
+```
+
+See the Testing section below for unit, integration and coverage commands.
+
 ## Testing
 
 The API Gateway includes a comprehensive test suite:
